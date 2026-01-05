@@ -21,6 +21,9 @@ namespace CommonLib.Entities
 
         public int Order { get; set; } = 0;
 
+        [StringLength(20)]
+        public string? Timestamp { get; set; } // Thời gian trong audio (format: "MM:SS" hoặc "HH:MM:SS")
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
         public bool IsActive { get; set; } = true;

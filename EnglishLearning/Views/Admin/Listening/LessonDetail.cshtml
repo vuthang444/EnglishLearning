@@ -1,0 +1,137 @@
+@model CommonLib.Entities.Lesson
+
+@{
+    ViewData["Title"] = "Chi tiết bài nghe";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var exercises = ViewBag.Exercises as List<CommonLib.Entities.Exercise> ?? new List<CommonLib.Entities.Exercise>();
+}
+
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Chi tiết bài nghe</h2>
+            <p class="text-muted mb-0">@Model.Title</p>
+        </div>
+        <div>
+            <a href="@Url.Action("EditLesson", new { id = Model.Id })" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Sửa
+            </a>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">Quay lại</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Thông tin bài nghe</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Tiêu đề:</strong> @Model.Title</p>
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <p><strong>Mô tả:</strong> @Model.Description</p>
+                    }
+                    <p><strong>Cấp độ:</strong> 
+                        @if (Model.Level == 1) { <span class="badge bg-info">Cơ bản</span> }
+                        else if (Model.Level == 2) { <span class="badge bg-warning">Trung bình</span> }
+                        else { <span class="badge bg-danger">Nâng cao</span> }
+                    </p>
+                    <p><strong>Thứ tự:</strong> @Model.Order</p>
+                    <p><strong>Trạng thái:</strong> 
+                        @if (Model.IsActive) { <span class="badge bg-success">Hoạt động</span> }
+                        else { <span class="badge bg-secondary">Tạm dừng</span> }
+                    </p>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.AudioUrl))
+            {
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Audio</h5>
+                    </div>
+                    <div class="card-body">
+                        <audio controls style="width: 100%;">
+                            <source src="@Model.AudioUrl" type="audio/mpeg">
+                        </audio>
+                        <p class="mt-2"><small>URL: @Model.AudioUrl</small></p>
+                    </div>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.Transcript))
+            {
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Transcript</h5>
+                    </div>
+                    <div class="card-body">
+                        <div>@Html.Raw(Model.Transcript)</div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Cấu hình</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Giới hạn số lần nghe:</strong> 
+                        @(Model.PlayLimit.HasValue ? Model.PlayLimit.Value.ToString() : "Không giới hạn")
+                    </p>
+                    <p><strong>Tốc độ mặc định:</strong> @Model.DefaultSpeed x</p>
+                    <p><strong>Ẩn Transcript:</strong> 
+                        @(Model.HideTranscript ? "Có" : "Không")
+                    </p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Thống kê</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Số câu hỏi:</strong> @exercises.Count</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (exercises.Any())
+    {
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Danh sách câu hỏi</h5>
+            </div>
+            <div class="card-body">
+                @foreach (var exercise in exercises.OrderBy(e => e.Order))
+                {
+                    <div class="border rounded p-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0">Câu @exercise.Order: @exercise.Question</h6>
+                        </div>
+                        @if (!string.IsNullOrEmpty(exercise.Timestamp))
+                        {
+                            <p class="text-muted mb-2"><small><i class="bi bi-clock"></i> Timestamp: @exercise.Timestamp</small></p>
+                        }
+                        <div class="ms-3">
+                            @foreach (var answer in exercise.Answers.OrderBy(a => a.Order))
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" disabled @(answer.IsCorrect ? "checked" : "")>
+                                    <label class="form-check-label @(answer.IsCorrect ? "text-success fw-bold" : "")">
+                                        @answer.Text
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+

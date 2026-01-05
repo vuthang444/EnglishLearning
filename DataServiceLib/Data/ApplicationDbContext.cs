@@ -59,6 +59,8 @@ namespace DataServiceLib.Data
                 entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
                 entity.Property(e => e.ReadingContent).HasMaxLength(10000);
                 entity.Property(e => e.ReadingLevel).HasMaxLength(10);
+                entity.Property(e => e.AudioUrl).HasMaxLength(1000);
+                entity.Property(e => e.Transcript).HasMaxLength(20000);
                 entity.HasOne(e => e.Skill)
                       .WithMany(s => s.Lessons)
                       .HasForeignKey(e => e.SkillId)
@@ -70,6 +72,7 @@ namespace DataServiceLib.Data
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Question).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.Timestamp).HasMaxLength(20);
                 entity.HasOne(e => e.Lesson)
                       .WithMany(l => l.Exercises)
                       .HasForeignKey(e => e.LessonId)

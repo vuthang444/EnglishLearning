@@ -93,8 +93,8 @@
             
             <div class="nav-divider">Kỹ năng</div>
             
-            <a class="nav-link" 
-               asp-controller="Lessons" asp-action="Index" asp-route-skillId="1">
+            <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Listening" ? "active" : "")" 
+               href="/Admin/Listening">
                 <i class="bi bi-earbuds"></i> Listening
             </a>
             

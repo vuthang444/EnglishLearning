@@ -1,0 +1,234 @@
+@model List<CommonLib.Entities.Lesson>
+
+@{
+    ViewData["Title"] = "Danh sách bài nghe";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .lessons-container {
+        padding: 30px 0;
+    }
+
+    .page-header {
+        margin-bottom: 30px;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2E5C8A;
+        margin-bottom: 10px;
+    }
+
+    .page-subtitle {
+        color: #6c757d;
+        font-size: 1.1rem;
+    }
+
+    .lesson-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .lesson-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .lesson-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 15px;
+    }
+
+    .lesson-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #2E5C8A;
+        margin-bottom: 5px;
+    }
+
+    .lesson-description {
+        color: #6c757d;
+        font-size: 0.95rem;
+        margin-bottom: 15px;
+    }
+
+    .lesson-meta {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+    }
+
+    .meta-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .badge-level {
+        background: #e7f3ff;
+        color: #4A90E2;
+    }
+
+    .badge-status {
+        background: #e6f7e6;
+        color: #28a745;
+    }
+
+    .badge-completed {
+        background: #fff4e6;
+        color: #ff9800;
+    }
+
+    .btn-start {
+        background: #4A90E2;
+        color: white;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+    }
+
+    .btn-start:hover {
+        background: #357ABD;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(74, 144, 226, 0.3);
+        color: white;
+    }
+
+    .btn-continue {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+    }
+
+    .btn-continue:hover {
+        background: #218838;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3);
+        color: white;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 20px;
+    }
+</style>
+
+<div class="container lessons-container">
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="bi bi-earbuds"></i> Danh sách bài nghe
+        </h1>
+        <p class="page-subtitle">Luyện nghe với các bài tập đa dạng, từ cơ bản đến nâng cao</p>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="row">
+            @foreach (var lesson in Model)
+            {
+                var userSubmissions = ViewBag.UserSubmissions as List<CommonLib.Entities.Submission> ?? new List<CommonLib.Entities.Submission>();
+                var submission = userSubmissions.FirstOrDefault(s => s.LessonId == lesson.Id);
+                var hasCompleted = submission != null;
+
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="lesson-card">
+                        <div class="lesson-header">
+                            <div>
+                                <h3 class="lesson-title">@lesson.Title</h3>
+                                @if (!string.IsNullOrEmpty(lesson.Description))
+                                {
+                                    <p class="lesson-description">@lesson.Description</p>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="lesson-meta">
+                            @if (lesson.Level == 1)
+                            {
+                                <span class="meta-badge badge-level">Cơ bản</span>
+                            }
+                            else if (lesson.Level == 2)
+                            {
+                                <span class="meta-badge badge-level">Trung bình</span>
+                            }
+                            else if (lesson.Level == 3)
+                            {
+                                <span class="meta-badge badge-level">Nâng cao</span>
+                            }
+
+                            @if (lesson.IsActive)
+                            {
+                                <span class="meta-badge badge-status">Hoạt động</span>
+                            }
+
+                            @if (hasCompleted)
+                            {
+                                <span class="meta-badge badge-completed">
+                                    Đã hoàn thành (@submission.Score/@submission.MaxScore)
+                                </span>
+                            }
+                        </div>
+
+                        <div class="text-end">
+                            @if (hasCompleted)
+                            {
+                                <a href="@Url.Action("Exercise", "Listening", new { lessonId = lesson.Id })" class="btn-continue">
+                                    Làm lại →
+                                </a>
+                            }
+                            else
+                            {
+                                <a href="@Url.Action("Exercise", "Listening", new { lessonId = lesson.Id })" class="btn-start">
+                                    Bắt đầu học →
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <div class="empty-state-icon">👂</div>
+            <h3>Chưa có bài nghe nào</h3>
+            <p>Hiện tại chưa có bài nghe nào được cung cấp. Vui lòng quay lại sau!</p>
+        </div>
+    }
+</div>
+

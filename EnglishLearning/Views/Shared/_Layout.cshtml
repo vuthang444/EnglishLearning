@@ -150,7 +150,7 @@
                                     Khóa học
                                 </a>
                                 <ul class="dropdown-menu" aria-labelledby="coursesDropdown">
-                                    <li><a class="dropdown-item" href="#">Listening</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Listening" asp-action="Index">Listening</a></li>
                                     <li><a class="dropdown-item" href="#">Speaking</a></li>
                                     <li><a class="dropdown-item" asp-controller="Reading" asp-action="Exercise" asp-route-lessonId="1">Reading</a></li>
                                     <li><a class="dropdown-item" href="#">Writing</a></li>
@@ -171,7 +171,7 @@
                         @if (User.Identity?.IsAuthenticated == true)
                         {
                             <li class="nav-item me-3">
-                                <a asp-controller="Home" asp-action="Index" class="btn btn-start-learning">
+                                <a asp-controller="Home" asp-action="Dashboard" class="btn btn-start-learning">
                                     Bắt đầu học
                                 </a>
                             </li>

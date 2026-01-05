@@ -169,7 +169,7 @@
         </p>
         @if (User.Identity?.IsAuthenticated == true)
         {
-            <a href="#features" class="hero-cta">KHÁM PHÁ NGAY</a>
+            <a asp-controller="Home" asp-action="Dashboard" class="hero-cta">BẮT ĐẦU HỌC</a>
         }
         else
         {

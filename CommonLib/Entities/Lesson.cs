@@ -19,6 +19,19 @@ namespace CommonLib.Entities
         [StringLength(10)]
         public string? ReadingLevel { get; set; } // Cấp độ: A1, A2, B1, B2, C1, C2
 
+        // Listening fields
+        [StringLength(1000)]
+        public string? AudioUrl { get; set; } // URL file audio hoặc link Soundcloud/Drive
+
+        [StringLength(20000)]
+        public string? Transcript { get; set; } // Bản gỡ băng (Rich Text)
+
+        public bool HideTranscript { get; set; } = false; // Ẩn transcript khi làm bài
+
+        public int? PlayLimit { get; set; } // Số lần được nghe tối đa (null = không giới hạn)
+
+        public double DefaultSpeed { get; set; } = 1.0; // Tốc độ phát mặc định (0.5, 1.0, 1.5)
+
         [Required]
         public int SkillId { get; set; }
         public Skill? Skill { get; set; }

@@ -1,0 +1,143 @@
+@model List<CommonLib.Entities.Lesson>
+
+@{
+    ViewData["Title"] = "Quản lý Listening";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Quản lý Listening</h2>
+            <p class="text-muted mb-0">Kỹ năng nghe - Quản lý bài học và bài tập</p>
+        </div>
+        <div>
+            <a href="@Url.Action("CreateListeningPassage")" class="btn btn-primary">
+                <i class="bi bi-file-earmark-music"></i> Tạo bài nghe mới
+            </a>
+        </div>
+    </div>
+
+    <!-- Thống kê -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Tổng số bài học</h5>
+                    <h2 class="mb-0">@ViewBag.TotalLessons</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Bài học đang hoạt động</h5>
+                    <h2 class="mb-0">@ViewBag.ActiveLessons</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">Tổng số bài tập</h5>
+                    <h2 class="mb-0">@ViewBag.TotalExercises</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Danh sách bài học -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Danh sách bài học</h5>
+        </div>
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tiêu đề</th>
+                                <th>Cấp độ</th>
+                                <th>Thứ tự</th>
+                                <th>Số bài tập</th>
+                                <th>Trạng thái</th>
+                                <th>Ngày tạo</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var lesson in Model.OrderBy(l => l.Order))
+                            {
+                                <tr>
+                                    <td>@lesson.Id</td>
+                                    <td>
+                                        <strong>@lesson.Title</strong>
+                                        @if (!string.IsNullOrEmpty(lesson.Description))
+                                        {
+                                            <br><small class="text-muted">@(lesson.Description.Length > 50 ? lesson.Description.Substring(0, 50) + "..." : lesson.Description)</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (lesson.Level == 1)
+                                        {
+                                            <span class="badge bg-info">Cơ bản</span>
+                                        }
+                                        else if (lesson.Level == 2)
+                                        {
+                                            <span class="badge bg-warning">Trung bình</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">Nâng cao</span>
+                                        }
+                                    </td>
+                                    <td>@lesson.Order</td>
+                                    <td>
+                                        <span class="badge bg-secondary">@(lesson.Exercises?.Count ?? 0)</span>
+                                    </td>
+                                    <td>
+                                        @if (lesson.IsActive)
+                                        {
+                                            <span class="badge bg-success">Hoạt động</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Tạm dừng</span>
+                                        }
+                                    </td>
+                                    <td>@lesson.CreatedAt.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="@Url.Action("LessonDetail", new { id = lesson.Id })" class="btn btn-sm btn-info" title="Xem chi tiết">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="@Url.Action("EditLesson", new { id = lesson.Id })" class="btn btn-sm btn-warning" title="Sửa">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <form asp-action="DeleteLesson" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa bài học này? Tất cả bài tập liên quan cũng sẽ bị xóa.');">
+                                                <input type="hidden" name="id" value="@lesson.Id" />
+                                                <button type="submit" class="btn btn-sm btn-danger" title="Xóa">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info text-center">
+                    <i class="bi bi-info-circle"></i> Chưa có bài học nào. Hãy tạo bài học đầu tiên!
+                </div>
+            }
+        </div>
+    </div>
+</div>
+

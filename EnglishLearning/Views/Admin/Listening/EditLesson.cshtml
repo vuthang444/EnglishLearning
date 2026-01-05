@@ -1,0 +1,324 @@
+@model CommonLib.DTOs.ListeningPassageDto
+
+@{
+    ViewData["Title"] = "Sửa bài nghe";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var skill = ViewBag.Skill as CommonLib.Entities.Skill;
+}
+
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Sửa bài nghe</h2>
+            <p class="text-muted mb-0">Kỹ năng: <strong>@skill?.Name</strong></p>
+        </div>
+        <a href="@Url.Action("Index")" class="btn btn-secondary">Quay lại</a>
+    </div>
+
+    <form asp-action="EditLesson" method="post" id="listeningPassageForm">
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <!-- Phần 1: Thông tin cơ bản -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Thông tin cơ bản</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label asp-for="Title" class="form-label">Tiêu đề bài nghe *</label>
+                    <input asp-for="Title" class="form-control" />
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label">Mô tả ngắn</label>
+                    <textarea asp-for="Description" class="form-control" rows="2"></textarea>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Level" class="form-label">Cấp độ hệ thống</label>
+                        <select asp-for="Level" class="form-select">
+                            <option value="1">Cơ bản</option>
+                            <option value="2">Trung bình</option>
+                            <option value="3">Nâng cao</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Order" class="form-label">Thứ tự</label>
+                        <input asp-for="Order" type="number" class="form-control" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phần 2: Quản lý Audio -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-music"></i> Quản lý Audio</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label asp-for="AudioUrl" class="form-label">URL Audio *</label>
+                    <input asp-for="AudioUrl" class="form-control" id="audioUrl" />
+                    <span asp-validation-for="AudioUrl" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3" id="audioPreviewContainer" style="display: @(string.IsNullOrEmpty(Model.AudioUrl) ? "none" : "block");">
+                    <label class="form-label">Preview Audio</label>
+                    <div class="border rounded p-3 bg-light">
+                        <audio id="audioPreview" controls style="width: 100%;">
+                            <source id="audioSource" src="@Model.AudioUrl" type="audio/mpeg">
+                        </audio>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="PlayLimit" class="form-label">Giới hạn số lần nghe</label>
+                        <input asp-for="PlayLimit" type="number" class="form-control" min="1" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="DefaultSpeed" class="form-label">Tốc độ phát mặc định</label>
+                        <select asp-for="DefaultSpeed" class="form-select">
+                            <option value="0.5">0.5x</option>
+                            <option value="0.75">0.75x</option>
+                            <option value="1.0">1.0x (Bình thường)</option>
+                            <option value="1.25">1.25x</option>
+                            <option value="1.5">1.5x</option>
+                            <option value="2.0">2.0x</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phần 3: Transcript -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-file-text"></i> Transcript</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label asp-for="Transcript" class="form-label">Nội dung Transcript</label>
+                    <textarea asp-for="Transcript" class="form-control" id="transcriptEditor" rows="15"></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input asp-for="HideTranscript" class="form-check-input" type="checkbox" id="hideTranscript" />
+                        <label class="form-check-label" for="hideTranscript">
+                            Ẩn Transcript khi làm bài
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phần 4: Bộ câu hỏi -->
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-question-circle"></i> Bộ câu hỏi</h5>
+            </div>
+            <div class="card-body">
+                <div id="questionsContainer">
+                    @for (int i = 0; i < Model.Questions.Count; i++)
+                    {
+                        var question = Model.Questions[i];
+                        <div class="question-item mb-4 p-4 border rounded" data-index="@i">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0">Câu hỏi @(i + 1)</h6>
+                                <button type="button" class="btn btn-sm btn-danger" onclick="removeQuestion(this)">
+                                    <i class="bi bi-trash"></i> Xóa
+                                </button>
+                            </div>
+                            
+                            <input type="hidden" name="Questions[@i].Order" value="@(i + 1)" />
+
+                            <div class="row mb-3">
+                                <div class="col-md-8">
+                                    <label class="form-label">Đề bài câu hỏi *</label>
+                                    <textarea name="Questions[@i].Question" class="form-control" rows="2" required>@question.Question</textarea>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Timestamp (MM:SS)</label>
+                                    <input type="text" name="Questions[@i].Timestamp" class="form-control" 
+                                           value="@question.Timestamp" placeholder="00:30" />
+                                </div>
+                            </div>
+
+                            <div class="answers-container">
+                                <label class="form-label">Các phương án trả lời *</label>
+                                @for (int j = 0; j < question.Answers.Count; j++)
+                                {
+                                    var answer = question.Answers[j];
+                                    <div class="input-group mb-2">
+                                        <span class="input-group-text">
+                                            <input type="radio" name="Questions[@i].CorrectAnswer" value="@j" 
+                                                   @(answer.IsCorrect ? "checked" : "") required />
+                                        </span>
+                                        <input type="text" name="Questions[@i].Answers[@j].Text" class="form-control" 
+                                               value="@answer.Text" required />
+                                        <input type="hidden" name="Questions[@i].Answers[@j].IsCorrect" value="@answer.IsCorrect.ToString().ToLower()" />
+                                        <input type="hidden" name="Questions[@i].Answers[@j].Order" value="@(j + 1)" />
+                                        @if (j >= 2)
+                                        {
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeAnswer(this)">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                }
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addAnswer(this)">
+                                    <i class="bi bi-plus"></i> Thêm phương án
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <button type="button" class="btn btn-primary" onclick="addQuestion()">
+                    <i class="bi bi-plus-circle"></i> Thêm câu hỏi
+                </button>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2">
+            <a href="@Url.Action("Index")" class="btn btn-secondary">Hủy</a>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle"></i> Cập nhật
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
+    <script>
+        CKEDITOR.replace('transcriptEditor', { height: 400 });
+
+        document.getElementById('audioUrl').addEventListener('input', function() {
+            const url = this.value.trim();
+            const previewContainer = document.getElementById('audioPreviewContainer');
+            const audioSource = document.getElementById('audioSource');
+            if (url) {
+                audioSource.src = url;
+                document.getElementById('audioPreview').load();
+                previewContainer.style.display = 'block';
+            } else {
+                previewContainer.style.display = 'none';
+            }
+        });
+
+        let questionIndex = @Model.Questions.Count;
+
+        function addQuestion() {
+            const container = document.getElementById('questionsContainer');
+            const questionHtml = `
+                <div class="question-item mb-4 p-4 border rounded" data-index="${questionIndex}">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Câu hỏi ${questionIndex + 1}</h6>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeQuestion(this)">
+                            <i class="bi bi-trash"></i> Xóa
+                        </button>
+                    </div>
+                    <input type="hidden" name="Questions[${questionIndex}].Order" value="${questionIndex + 1}" />
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Đề bài câu hỏi *</label>
+                            <textarea name="Questions[${questionIndex}].Question" class="form-control" rows="2" required></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Timestamp (MM:SS)</label>
+                            <input type="text" name="Questions[${questionIndex}].Timestamp" class="form-control" placeholder="00:30" />
+                        </div>
+                    </div>
+                    <div class="answers-container">
+                        <label class="form-label">Các phương án trả lời *</label>
+                        ${['A', 'B', 'C', 'D'].map((letter, i) => `
+                            <div class="input-group mb-2">
+                                <span class="input-group-text">
+                                    <input type="radio" name="Questions[${questionIndex}].CorrectAnswer" value="${i}" required />
+                                </span>
+                                <input type="text" name="Questions[${questionIndex}].Answers[${i}].Text" class="form-control" placeholder="Phương án ${letter}" required />
+                                <input type="hidden" name="Questions[${questionIndex}].Answers[${i}].IsCorrect" value="false" />
+                                <input type="hidden" name="Questions[${questionIndex}].Answers[${i}].Order" value="${i + 1}" />
+                                ${i >= 2 ? `<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeAnswer(this)"><i class="bi bi-x"></i></button>` : ''}
+                            </div>
+                        `).join('')}
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addAnswer(this)">
+                            <i class="bi bi-plus"></i> Thêm phương án
+                        </button>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', questionHtml);
+            questionIndex++;
+            updateQuestionNumbers();
+        }
+
+        function removeQuestion(button) {
+            if (confirm('Bạn có chắc chắn muốn xóa câu hỏi này?')) {
+                button.closest('.question-item').remove();
+                updateQuestionNumbers();
+            }
+        }
+
+        function updateQuestionNumbers() {
+            const questions = document.querySelectorAll('.question-item');
+            questions.forEach((q, index) => {
+                q.querySelector('h6').textContent = `Câu hỏi ${index + 1}`;
+                const orderInput = q.querySelector('input[name$=".Order"]');
+                if (orderInput) orderInput.value = index + 1;
+            });
+        }
+
+        function addAnswer(button) {
+            const container = button.closest('.answers-container');
+            const answerIndex = container.querySelectorAll('.input-group').length;
+            const questionItem = button.closest('.question-item');
+            const questionIndex = questionItem.dataset.index;
+            const letter = String.fromCharCode(65 + answerIndex);
+            
+            const answerHtml = `
+                <div class="input-group mb-2">
+                    <span class="input-group-text">
+                        <input type="radio" name="Questions[${questionIndex}].CorrectAnswer" value="${answerIndex}" />
+                    </span>
+                    <input type="text" name="Questions[${questionIndex}].Answers[${answerIndex}].Text" class="form-control" placeholder="Phương án ${letter}" required />
+                    <input type="hidden" name="Questions[${questionIndex}].Answers[${answerIndex}].IsCorrect" value="false" />
+                    <input type="hidden" name="Questions[${questionIndex}].Answers[${answerIndex}].Order" value="${answerIndex + 1}" />
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeAnswer(this)">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            `;
+            button.insertAdjacentHTML('beforebegin', answerHtml);
+        }
+
+        function removeAnswer(button) {
+            const container = button.closest('.answers-container');
+            if (container.querySelectorAll('.input-group').length > 2) {
+                button.closest('.input-group').remove();
+            } else {
+                alert('Phải có ít nhất 2 phương án trả lời');
+            }
+        }
+
+        document.addEventListener('change', function(e) {
+            if (e.target.type === 'radio' && e.target.name.includes('CorrectAnswer')) {
+                const questionItem = e.target.closest('.question-item');
+                const questionIndex = questionItem.dataset.index;
+                const answerIndex = e.target.value;
+                questionItem.querySelectorAll('input[name$=".IsCorrect"]').forEach((input, i) => {
+                    input.value = (i == answerIndex) ? 'true' : 'false';
+                });
+            }
+        });
+
+        document.getElementById('listeningPassageForm').addEventListener('submit', function(e) {
+            const transcriptContent = CKEDITOR.instances.transcriptEditor.getData();
+            document.getElementById('transcriptEditor').value = transcriptContent;
+        });
+    </script>
+}
+

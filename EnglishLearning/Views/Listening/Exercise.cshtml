@@ -1,0 +1,509 @@
+@model CommonLib.DTOs.ListeningExerciseDto
+
+@{
+    ViewData["Title"] = Model.Title;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .audio-player-container {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        background: white;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 10px;
+    }
+
+    .custom-audio-player {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .play-pause-btn {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        border: none;
+        background: #4A90E2;
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+
+    .play-pause-btn:hover:not(:disabled) {
+        background: #357ABD;
+        transform: scale(1.05);
+    }
+
+    .play-pause-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+
+    .seek-bar-container {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .seek-bar {
+        width: 100%;
+        height: 8px;
+        border-radius: 5px;
+        background: #e9ecef;
+        outline: none;
+        cursor: pointer;
+    }
+
+    .time-display {
+        font-size: 0.9rem;
+        color: #6c757d;
+        min-width: 100px;
+        text-align: center;
+    }
+
+    .speed-control, .rewind-btn {
+        padding: 8px 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .speed-control:hover, .rewind-btn:hover {
+        background: #f0f0f0;
+    }
+
+    .play-limit-info {
+        color: #dc3545;
+        font-size: 0.9rem;
+        margin-top: 10px;
+    }
+
+    .tab-container {
+        margin-top: 20px;
+    }
+
+    .nav-tabs {
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .nav-tabs .nav-link {
+        border: none;
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    .nav-tabs .nav-link.active {
+        color: #4A90E2;
+        border-bottom: 2px solid #4A90E2;
+    }
+
+    .tab-content {
+        padding: 20px 0;
+    }
+
+    .question-item {
+        margin-bottom: 25px;
+        padding: 20px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background: white;
+    }
+
+    .question-item:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .timestamp-badge {
+        background: #ffc107;
+        color: #000;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        margin-left: 10px;
+    }
+
+    .timestamp-badge:hover {
+        background: #ffb300;
+    }
+
+    .transcript-content {
+        line-height: 1.8;
+        font-size: 1.05rem;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    .transcript-locked {
+        text-align: center;
+        padding: 40px;
+        color: #6c757d;
+    }
+</style>
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Custom Audio Player (Sticky) -->
+            <div class="audio-player-container">
+                <h4 class="mb-3">
+                    <i class="bi bi-headphones"></i> @Model.Title
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <small class="text-muted d-block mt-1">@Model.Description</small>
+                    }
+                </h4>
+                
+                <div class="custom-audio-player">
+                    <button class="play-pause-btn" id="playPauseBtn" onclick="togglePlay()">
+                        <i class="bi bi-play-fill" id="playIcon"></i>
+                    </button>
+                    
+                    <button class="rewind-btn" onclick="rewind5s()" title="Lùi lại 5 giây">
+                        <i class="bi bi-skip-backward-fill"></i> 5s
+                    </button>
+                    
+                    <div class="seek-bar-container">
+                        <input type="range" class="seek-bar" id="seekBar" min="0" max="100" value="0" oninput="seekTo(this.value)" />
+                        <div class="time-display">
+                            <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
+                        </div>
+                    </div>
+                    
+                    <select class="speed-control" id="speedControl" onchange="changeSpeed(this.value)">
+                        <option value="0.5">0.5x</option>
+                        <option value="0.75">0.75x</option>
+                        <option value="1.0" selected>1.0x</option>
+                        <option value="1.25">1.25x</option>
+                        <option value="1.5">1.5x</option>
+                        <option value="2.0">2.0x</option>
+                    </select>
+                </div>
+
+                @if (Model.PlayLimit.HasValue)
+                {
+                    <div class="play-limit-info">
+                        <i class="bi bi-info-circle"></i> 
+                        Số lần nghe còn lại: <strong id="playCountRemaining">@(Model.PlayLimit.Value - Model.PlayCount)</strong> / @Model.PlayLimit.Value
+                    </div>
+                }
+
+                <audio id="audioElement" preload="metadata" style="display: none;">
+                    <source src="@Model.AudioUrl" type="audio/mpeg">
+                </audio>
+            </div>
+
+            <!-- Tabs: Questions và Transcript -->
+            <div class="tab-container">
+                <ul class="nav nav-tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="questions-tab" data-bs-toggle="tab" 
+                                data-bs-target="#questions" type="button" role="tab">
+                            <i class="bi bi-question-circle"></i> Câu hỏi
+                            <span class="badge bg-secondary ms-2" id="answeredCount">0/@Model.Questions.Count</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="transcript-tab" data-bs-toggle="tab" 
+                                data-bs-target="#transcript" type="button" role="tab"
+                                @(Model.HideTranscript && !ViewBag.HasSubmitted ? "disabled" : "")>
+                            <i class="bi bi-file-text"></i> Transcript
+                            @if (Model.HideTranscript && !ViewBag.HasSubmitted)
+                            {
+                                <span class="badge bg-warning ms-2">Khóa</span>
+                            }
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- Tab Questions -->
+                    <div class="tab-pane fade show active" id="questions" role="tabpanel">
+                        <form id="listeningExerciseForm">
+                            <input type="hidden" id="lessonId" value="@Model.LessonId" />
+                            <input type="hidden" id="startedAt" value="@DateTime.UtcNow.ToString("O")" />
+                            <input type="hidden" id="maxScore" value="@Model.Questions.Count" />
+
+                            <div id="questionsContainer">
+                                @for (int i = 0; i < Model.Questions.Count; i++)
+                                {
+                                    var question = Model.Questions[i];
+                                    <div class="question-item" data-question-id="@question.Id">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="mb-0">
+                                                <span class="badge bg-secondary">Câu @(i + 1)</span>
+                                                <span class="ms-2">@question.Question</span>
+                                            </h6>
+                                            @if (!string.IsNullOrEmpty(question.Timestamp))
+                                            {
+                                                <span class="timestamp-badge" onclick="seekToTimestamp('@question.Timestamp')" title="Nhấn để nghe từ vị trí này">
+                                                    <i class="bi bi-clock"></i> @question.Timestamp
+                                                </span>
+                                            }
+                                        </div>
+                                        
+                                        <div class="options mt-3">
+                                            @foreach (var answer in question.Answers)
+                                            {
+                                                var letter = ((char)('A' + answer.Order - 1)).ToString();
+                                                <div class="form-check mb-2">
+                                                    <input class="form-check-input answer-radio" 
+                                                           type="radio" 
+                                                           name="question_@question.Id" 
+                                                           id="q@(question.Id)_@letter" 
+                                                           value="@letter"
+                                                           data-question-id="@question.Id">
+                                                    <label class="form-check-label" for="q@(question.Id)_@letter">
+                                                        <strong>@letter.</strong> @answer.Text
+                                                    </label>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="d-flex justify-content-end mt-4">
+                                <button type="button" class="btn btn-primary btn-lg" onclick="submitAnswers()">
+                                    <i class="bi bi-check-circle"></i> Nộp bài
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Tab Transcript -->
+                    <div class="tab-pane fade" id="transcript" role="tabpanel">
+                        @if (Model.HideTranscript && !ViewBag.HasSubmitted)
+                        {
+                            <div class="transcript-locked">
+                                <i class="bi bi-lock" style="font-size: 3rem;"></i>
+                                <p class="mt-3">Transcript sẽ được hiển thị sau khi bạn nộp bài.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="transcript-content">
+                                @if (!string.IsNullOrEmpty(Model.Transcript))
+                                {
+                                    @Html.Raw(Model.Transcript)
+                                }
+                                else
+                                {
+                                    <p class="text-muted">Chưa có transcript.</p>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const audio = document.getElementById('audioElement');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const playIcon = document.getElementById('playIcon');
+        const seekBar = document.getElementById('seekBar');
+        const currentTimeSpan = document.getElementById('currentTime');
+        const durationSpan = document.getElementById('duration');
+        const speedControl = document.getElementById('speedControl');
+        
+        const playLimit = @(Model.PlayLimit?.ToString() ?? "null");
+        const defaultSpeed = @Model.DefaultSpeed;
+        const lessonId = @Model.LessonId;
+        
+        let playCount = parseInt(localStorage.getItem(`playCount_${lessonId}`) || '0');
+        let userAnswers = JSON.parse(localStorage.getItem(`answers_${lessonId}`) || '{}');
+        let startedAt = localStorage.getItem(`startedAt_${lessonId}`) || new Date().toISOString();
+        
+        // Initialize
+        audio.playbackRate = defaultSpeed;
+        speedControl.value = defaultSpeed;
+        
+        // Update play count display
+        if (playLimit) {
+            const remaining = playLimit - playCount;
+            document.getElementById('playCountRemaining').textContent = remaining;
+            if (remaining <= 0) {
+                playPauseBtn.disabled = true;
+            }
+        }
+        
+        // Restore audio position
+        const savedPosition = localStorage.getItem(`audioPosition_${lessonId}`);
+        if (savedPosition) {
+            audio.currentTime = parseFloat(savedPosition);
+            seekBar.value = (audio.currentTime / audio.duration) * 100;
+        }
+        
+        // Restore answers
+        Object.keys(userAnswers).forEach(questionId => {
+            const radio = document.querySelector(`input[name="question_${questionId}"][value="${userAnswers[questionId]}"]`);
+            if (radio) radio.checked = true;
+        });
+        updateAnsweredCount();
+        
+        // Audio events
+        audio.addEventListener('loadedmetadata', () => {
+            durationSpan.textContent = formatTime(audio.duration);
+            seekBar.max = audio.duration;
+        });
+        
+        audio.addEventListener('timeupdate', () => {
+            if (audio.duration) {
+                seekBar.value = (audio.currentTime / audio.duration) * 100;
+                currentTimeSpan.textContent = formatTime(audio.currentTime);
+                localStorage.setItem(`audioPosition_${lessonId}`, audio.currentTime);
+            }
+        });
+        
+        audio.addEventListener('ended', () => {
+            playIcon.className = 'bi bi-play-fill';
+            playPauseBtn.classList.remove('playing');
+        });
+        
+        // Functions
+        function togglePlay() {
+            if (playLimit && playCount >= playLimit) {
+                alert('Bạn đã hết số lần nghe cho phép!');
+                return;
+            }
+            
+            if (audio.paused) {
+                audio.play();
+                playIcon.className = 'bi bi-pause-fill';
+                playPauseBtn.classList.add('playing');
+                playCount++;
+                localStorage.setItem(`playCount_${lessonId}`, playCount);
+                
+                if (playLimit) {
+                    const remaining = playLimit - playCount;
+                    document.getElementById('playCountRemaining').textContent = remaining;
+                    if (remaining <= 0) {
+                        playPauseBtn.disabled = true;
+                    }
+                }
+            } else {
+                audio.pause();
+                playIcon.className = 'bi bi-play-fill';
+                playPauseBtn.classList.remove('playing');
+            }
+        }
+        
+        function seekTo(value) {
+            const time = (value / 100) * audio.duration;
+            audio.currentTime = time;
+        }
+        
+        function rewind5s() {
+            audio.currentTime = Math.max(0, audio.currentTime - 5);
+        }
+        
+        function changeSpeed(value) {
+            audio.playbackRate = parseFloat(value);
+        }
+        
+        function seekToTimestamp(timestamp) {
+            const parts = timestamp.split(':').map(Number);
+            let seconds = 0;
+            if (parts.length === 2) {
+                seconds = parts[0] * 60 + parts[1];
+            } else if (parts.length === 3) {
+                seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+            }
+            audio.currentTime = seconds;
+            if (audio.paused) {
+                togglePlay();
+            }
+        }
+        
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        // Answer tracking
+        document.querySelectorAll('.answer-radio').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const questionId = this.dataset.questionId;
+                userAnswers[questionId] = this.value;
+                localStorage.setItem(`answers_${lessonId}`, JSON.stringify(userAnswers));
+                updateAnsweredCount();
+            });
+        });
+        
+        function updateAnsweredCount() {
+            const answered = Object.keys(userAnswers).length;
+            document.getElementById('answeredCount').textContent = `${answered}/@Model.Questions.Count`;
+        }
+        
+        // Submit
+        async function submitAnswers() {
+            if (Object.keys(userAnswers).length < @Model.Questions.Count) {
+                if (!confirm('Bạn chưa trả lời hết các câu hỏi. Bạn có chắc muốn nộp bài?')) {
+                    return;
+                }
+            }
+            
+            const userAnswerArray = Object.keys(userAnswers).map(questionId => ({
+                questionId: parseInt(questionId),
+                selectedAnswer: userAnswers[questionId]
+            }));
+            
+            const timeSpent = Math.floor((new Date() - new Date(startedAt)) / 1000);
+            
+            const submissionData = {
+                lessonId: lessonId,
+                userId: 0, // Will be set by server
+                userAnswers: userAnswerArray,
+                startedAt: startedAt,
+                timeSpentSeconds: timeSpent,
+                maxScore: @Model.Questions.Count
+            };
+            
+            try {
+                const response = await fetch('@Url.Action("Submit", "Listening")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(submissionData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Clear localStorage
+                    localStorage.removeItem(`playCount_${lessonId}`);
+                    localStorage.removeItem(`answers_${lessonId}`);
+                    localStorage.removeItem(`audioPosition_${lessonId}`);
+                    localStorage.removeItem(`startedAt_${lessonId}`);
+                    
+                    // Redirect to result page
+                    window.location.href = `@Url.Action("Result", "Listening")/${result.result.submissionId}`;
+                } else {
+                    alert('Lỗi: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Đã xảy ra lỗi khi nộp bài. Vui lòng thử lại.');
+            }
+        }
+    </script>
+}
+

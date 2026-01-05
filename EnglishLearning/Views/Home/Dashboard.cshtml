@@ -1,0 +1,475 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<style>
+    .welcome-section {
+        background: linear-gradient(135deg, #4A90E2 0%, #2E5C8A 100%);
+        border-radius: 15px;
+        padding: 30px;
+        color: white;
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .welcome-avatar {
+        width: 80px;
+        height: 80px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        flex-shrink: 0;
+    }
+
+    .welcome-content h2 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .welcome-content p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        margin: 0;
+    }
+
+    .lesson-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .lesson-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 0.9rem;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    .lesson-info {
+        flex: 1;
+    }
+
+    .lesson-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #2E5C8A;
+        margin-bottom: 10px;
+    }
+
+    .lesson-meta {
+        display: flex;
+        gap: 20px;
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+    }
+
+    .lesson-stars {
+        color: #ffc107;
+        font-size: 1rem;
+    }
+
+    .btn-continue {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+    }
+
+    .btn-continue:hover {
+        background: #218838;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3);
+        color: white;
+    }
+
+    .study-plan-card {
+        background: white;
+        border-radius: 12px;
+        padding: 40px;
+        text-align: center;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .study-plan-message {
+        color: #6c757d;
+        font-size: 1.1rem;
+        margin-bottom: 25px;
+        line-height: 1.6;
+    }
+
+    .btn-explore {
+        background: #4A90E2;
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+    }
+
+    .btn-explore:hover {
+        background: #357ABD;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(74, 144, 226, 0.3);
+        color: white;
+    }
+
+    .courses-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .courses-header a {
+        color: #4A90E2;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .courses-header a:hover {
+        text-decoration: underline;
+    }
+
+    .course-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        transition: transform 0.3s ease;
+        margin-bottom: 20px;
+    }
+
+    .course-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .learning-profile-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .profile-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .profile-header a {
+        color: #4A90E2;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .progress-bar-container {
+        position: relative;
+        height: 8px;
+        background: #e9ecef;
+        border-radius: 10px;
+        margin: 20px 0;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4A90E2 0%, #2E5C8A 100%);
+        border-radius: 10px;
+        width: 75%;
+    }
+
+    .progress-labels {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+
+    .progress-marker {
+        position: absolute;
+        top: -6px;
+        width: 20px;
+        height: 20px;
+        background: #4A90E2;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        left: 75%;
+        transform: translateX(-50%);
+    }
+
+    .summary-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        background: #f8f9fa;
+    }
+
+    .summary-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .summary-icon.blue {
+        background: #e7f3ff;
+        color: #4A90E2;
+    }
+
+    .summary-icon.orange {
+        background: #fff4e6;
+        color: #ff9800;
+    }
+
+    .summary-icon.red {
+        background: #ffe6e6;
+        color: #dc3545;
+    }
+
+    .summary-icon.green {
+        background: #e6f7e6;
+        color: #28a745;
+    }
+
+    .summary-content {
+        flex: 1;
+    }
+
+    .summary-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-bottom: 5px;
+    }
+
+    .summary-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    .row {
+        display: flex;
+        gap: 25px;
+    }
+
+    .col-left {
+        flex: 2;
+    }
+
+    .col-right {
+        flex: 1;
+    }
+
+    @@media (max-width: 1200px) {
+        .row {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div class="row">
+    <div class="col-left">
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <div class="welcome-avatar">
+                <i class="bi bi-person-fill"></i>
+            </div>
+            <div class="welcome-content">
+                <h2>Xin chào, @ViewBag.UserName</h2>
+                <p>Cùng EnglishLearning tiến bộ mỗi ngày nào!</p>
+            </div>
+        </div>
+
+        <!-- Bài học gần nhất -->
+        <div class="content-card">
+            <h3 class="card-title">Bài học gần nhất</h3>
+            @if (ViewBag.LatestLesson != null)
+            {
+                var lesson = ViewBag.LatestLesson as CommonLib.Entities.Lesson;
+                if (lesson != null)
+                {
+                    <div class="lesson-card">
+                        <div class="lesson-icon">
+                            13<br />LESSON
+                        </div>
+                        <div class="lesson-info">
+                            <div class="lesson-title">@lesson.Title</div>
+                            <div class="lesson-meta">
+                                <span>2/ Section</span>
+                                <span class="lesson-stars">★★★★★★</span>
+                            </div>
+                        </div>
+                        <div>
+                            @if (lesson.Skill?.Name == "Reading")
+                            {
+                                <a href="@Url.Action("Exercise", "Reading", new { lessonId = lesson.Id })" class="btn-continue">
+                                    Tiếp tục học →
+                                </a>
+                            }
+                            else if (lesson.Skill?.Name == "Listening")
+                            {
+                                <a href="@Url.Action("Exercise", "Listening", new { lessonId = lesson.Id })" class="btn-continue">
+                                    Tiếp tục học →
+                                </a>
+                            }
+                            else
+                            {
+                                <a href="@Url.Action("Exercise", "Reading", new { lessonId = lesson.Id })" class="btn-continue">
+                                    Tiếp tục học →
+                                </a>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="text-muted">Chưa có bài học nào. Hãy bắt đầu học ngay!</p>
+            }
+        </div>
+
+        <!-- Study Plan -->
+        <div class="study-plan-card">
+            <p class="study-plan-message">
+                Ôi! Khoá học bạn sở hữu không có sẵn Study Plan phù hợp. Hãy cùng EnglishLearning khám phá các khoá học khác để trải nghiệm Study Plan nhé!
+            </p>
+            <a href="#" class="btn-explore">Khám phá ngay →</a>
+        </div>
+
+        <!-- Khoá học của tôi -->
+        <div class="content-card">
+            <div class="courses-header">
+                <h3 class="card-title" style="margin: 0;">Khoá học của tôi</h3>
+                <a href="#">Xem tất cả</a>
+            </div>
+            <div class="row">
+                @if (ViewBag.AllLessons != null)
+                {
+                    var lessons = ViewBag.AllLessons as List<CommonLib.Entities.Lesson>;
+                    if (lessons != null)
+                    {
+                        var displayLessons = lessons.Take(4).ToList();
+                        @foreach (var lesson in displayLessons)
+                        {
+                            <div class="col-md-6">
+                                <div class="course-card">
+                                    <h5 style="color: #2E5C8A; margin-bottom: 10px;">@lesson.Title</h5>
+                                    <p class="text-muted" style="font-size: 0.9rem; margin: 0;">
+                                        @lesson.Skill?.Name
+                                    </p>
+                                </div>
+                            </div>
+                        }
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-right">
+        <!-- Learning Profile -->
+        <div class="learning-profile-card">
+            <div class="profile-header">
+                <h5 style="margin: 0; color: #2E5C8A; font-weight: 600;">Learning Profile</h5>
+                <a href="#">Xem tất cả</a>
+            </div>
+            <div>
+                <h6 style="color: #6c757d; font-size: 0.9rem; margin-bottom: 15px;">Your IELTS Level</h6>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill"></div>
+                    <div class="progress-marker">
+                        <i class="bi bi-bullseye" style="font-size: 0.7rem; color: white;"></i>
+                    </div>
+                </div>
+                <div class="progress-labels">
+                    <span>Entry</span>
+                    <span>Predicted</span>
+                    <span>Target</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Learning Summary -->
+        <div class="content-card">
+            <h5 class="card-title">Learning summary</h5>
+            <div class="summary-item">
+                <div class="summary-icon blue">
+                    <i class="bi bi-clock"></i>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-label">Tổng thời lượng</div>
+                    <div class="summary-value" style="color: #4A90E2;">@(ViewBag.TotalDuration ?? 0) hours</div>
+                </div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-icon orange">
+                    <i class="bi bi-trophy"></i>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-label">Tổng số cúp đã đạt</div>
+                    <div class="summary-value" style="color: #ff9800;">@(ViewBag.TotalCups ?? 0)</div>
+                </div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-icon red">
+                    <i class="bi bi-clipboard-check"></i>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-label">Tổng số bài test</div>
+                    <div class="summary-value" style="color: #dc3545;">@(ViewBag.TotalTests ?? 0)</div>
+                </div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-icon green">
+                    <i class="bi bi-play-circle"></i>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-label">Tổng số bài học</div>
+                    <div class="summary-value" style="color: #28a745;">@(ViewBag.TotalLessons ?? 0)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
