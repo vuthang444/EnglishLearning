@@ -1,0 +1,133 @@
+@model CommonLib.DTOs.SubmissionResultDto
+
+@{
+    ViewData["Title"] = "Kết quả bài làm";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var lesson = ViewBag.Lesson as CommonLib.Entities.Lesson;
+}
+
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-clipboard-check"></i> Kết quả bài làm
+                        @if (lesson != null)
+                        {
+                            <span class="ms-2">- @lesson.Title</span>
+                        }
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Tổng quan kết quả -->
+                    <div class="text-center mb-5 p-4 bg-light rounded">
+                        <h3 class="mb-3">Tổng điểm</h3>
+                        <div class="display-3 fw-bold @(Model.Percentage >= 80 ? "text-success" : Model.Percentage >= 50 ? "text-warning" : "text-danger")">
+                            @Model.Score/@Model.MaxScore
+                        </div>
+                        <div class="h4 text-muted mt-2">@Model.Percentage%</div>
+                        <div class="mt-3">
+                            @if (Model.Percentage >= 80)
+                            {
+                                <span class="badge bg-success fs-6">Xuất sắc!</span>
+                            }
+                            else if (Model.Percentage >= 50)
+                            {
+                                <span class="badge bg-warning fs-6">Khá tốt</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger fs-6">Cần cố gắng thêm</span>
+                            }
+                        </div>
+                        <p class="text-muted mt-3 mb-0">
+                            <i class="bi bi-clock"></i> Thời gian làm bài: @{
+                                var minutes = Model.TimeSpentSeconds / 60;
+                                var seconds = Model.TimeSpentSeconds % 60;
+                            }
+                            @if (minutes > 0)
+                            {
+                                <text>@minutes phút </text>
+                            }
+                            @seconds giây
+                        </p>
+                    </div>
+
+                    <hr>
+
+                    <!-- Chi tiết từng câu hỏi -->
+                    <h5 class="mb-4">
+                        <i class="bi bi-list-check"></i> Chi tiết từng câu hỏi
+                    </h5>
+                    
+                    <div class="list-group">
+                        @for (int i = 0; i < Model.QuestionResults.Count; i++)
+                        {
+                            var qResult = Model.QuestionResults[i];
+                            var isCorrect = qResult.IsCorrect;
+                            var itemClass = isCorrect ? "list-group-item-success" : "list-group-item-danger";
+                            var badgeClass = isCorrect ? "bg-success" : "bg-danger";
+                            var icon = isCorrect ? "bi-check-circle-fill" : "bi-x-circle-fill";
+                            
+                            <div class="list-group-item @itemClass">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-2">
+                                            <span class="badge @badgeClass me-2">
+                                                <i class="bi @icon"></i> @(isCorrect ? "Đúng" : "Sai")
+                                            </span>
+                                            <span class="fw-bold">Câu @(i + 1):</span> @qResult.Question
+                                        </h6>
+                                        <div class="ms-4 mt-2">
+                                            <div class="mb-1">
+                                                <small class="text-muted">Đáp án bạn chọn:</small>
+                                                <strong class="@(isCorrect ? "text-success" : "text-danger")">
+                                                    @(string.IsNullOrEmpty(qResult.SelectedAnswer) ? "Chưa chọn" : qResult.SelectedAnswer)
+                                                </strong>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted">Đáp án đúng:</small>
+                                                <strong class="text-success">@qResult.CorrectAnswer</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-secondary fs-6">@qResult.Score/@qResult.Score điểm</span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="mt-4 text-center">
+                        <a href="@Url.Action("Index", "Home")" class="btn btn-primary me-2">
+                            <i class="bi bi-house"></i> Về trang chủ
+                        </a>
+                        @if (lesson != null)
+                        {
+                            <a href="@Url.Action("Exercise", "Reading", new { lessonId = lesson.Id })" class="btn btn-outline-primary">
+                                <i class="bi bi-arrow-clockwise"></i> Làm lại bài này
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .list-group-item {
+        border-left-width: 4px;
+    }
+    
+    .list-group-item-success {
+        border-left-color: #198754;
+    }
+    
+    .list-group-item-danger {
+        border-left-color: #dc3545;
+    }
+</style>
+

@@ -1,0 +1,105 @@
+@model List<CommonLib.Entities.Lesson>
+
+@{
+    ViewData["Title"] = "Quản lý bài học";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Quản lý bài học</h2>
+        <div>
+            <a href="@Url.Action("Index", "Admin")" class="btn btn-secondary">Quay lại</a>
+            <a href="@Url.Action("Create")" class="btn btn-primary">Thêm bài học mới</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">Lọc theo kỹ năng:</label>
+                <select id="skillFilter" class="form-select" onchange="filterBySkill()">
+                    <option value="">Tất cả</option>
+                    @foreach (var skill in ViewBag.Skills as List<CommonLib.Entities.Skill>)
+                    {
+                        <option value="@skill.Id" selected="@(ViewBag.SelectedSkillId != null && ViewBag.SelectedSkillId == skill.Id)">
+                            @skill.Name
+                        </option>
+                    }
+                </select>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tiêu đề</th>
+                            <th>Kỹ năng</th>
+                            <th>Cấp độ</th>
+                            <th>Thứ tự</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var lesson in Model)
+                        {
+                            <tr>
+                                <td>@lesson.Id</td>
+                                <td>@lesson.Title</td>
+                                <td>@lesson.Skill?.Name</td>
+                                <td>
+                                    @if (lesson.Level == 1)
+                                    {
+                                        <span class="badge bg-info">Cơ bản</span>
+                                    }
+                                    else if (lesson.Level == 2)
+                                    {
+                                        <span class="badge bg-warning">Trung bình</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">Nâng cao</span>
+                                    }
+                                </td>
+                                <td>@lesson.Order</td>
+                                <td>
+                                    @if (lesson.IsActive)
+                                    {
+                                        <span class="badge bg-success">Hoạt động</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Tạm dừng</span>
+                                    }
+                                </td>
+                                <td>
+                                    <a href="@Url.Action("Index", "Exercises", new { lessonId = lesson.Id })" class="btn btn-sm btn-info">
+                                        Bài tập
+                                    </a>
+                                    <a href="@Url.Action("Edit", new { id = lesson.Id })" class="btn btn-sm btn-warning">
+                                        Sửa
+                                    </a>
+                                    <form asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa bài học này?');">
+                                        <input type="hidden" name="id" value="@lesson.Id" />
+                                        <button type="submit" class="btn btn-sm btn-danger">Xóa</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function filterBySkill() {
+        const skillId = document.getElementById('skillFilter').value;
+        const url = skillId ? '@Url.Action("Index")?skillId=' + skillId : '@Url.Action("Index")';
+        window.location.href = url;
+    }
+</script>
+

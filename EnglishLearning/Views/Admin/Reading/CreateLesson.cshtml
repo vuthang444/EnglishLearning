@@ -1,0 +1,96 @@
+@model CommonLib.DTOs.LessonDto
+
+@{
+    ViewData["Title"] = "Thêm bài học Reading mới";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var skill = ViewBag.Skill as CommonLib.Entities.Skill;
+}
+
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Thêm bài học Reading mới</h2>
+            <p class="text-muted mb-0">Kỹ năng: <strong>@skill?.Name</strong></p>
+        </div>
+        <a href="@Url.Action("Index")" class="btn btn-secondary">Quay lại</a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form asp-action="CreateLesson" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Title" class="form-label">Tiêu đề bài học *</label>
+                    <input asp-for="Title" class="form-control" placeholder="Ví dụ: Đọc hiểu đoạn văn ngắn" />
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label">Mô tả bài học</label>
+                    <textarea asp-for="Description" class="form-control" rows="4" placeholder="Mô tả chi tiết về bài học..."></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="ReadingContent" class="form-label">Nội dung bài đọc</label>
+                    <textarea asp-for="ReadingContent" class="form-control" rows="10" placeholder="Nhập nội dung bài đọc..."></textarea>
+                    <span asp-validation-for="ReadingContent" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="ReadingLevel" class="form-label">Cấp độ CEFR</label>
+                    <select asp-for="ReadingLevel" class="form-select">
+                        <option value="">-- Chọn cấp độ --</option>
+                        @if (ViewBag.ReadingLevels != null)
+                        {
+                            @foreach (var level in ViewBag.ReadingLevels as List<string>)
+                            {
+                                <option value="@level">@level</option>
+                            }
+                        }
+                    </select>
+                    <span asp-validation-for="ReadingLevel" class="text-danger"></span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Level" class="form-label">Cấp độ *</label>
+                        <select asp-for="Level" class="form-select">
+                            <option value="1">Cơ bản</option>
+                            <option value="2">Trung bình</option>
+                            <option value="3">Nâng cao</option>
+                        </select>
+                        <span asp-validation-for="Level" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Order" class="form-label">Thứ tự hiển thị</label>
+                        <input asp-for="Order" type="number" class="form-control" value="0" min="0" />
+                        <small class="form-text text-muted">Số nhỏ hơn sẽ hiển thị trước</small>
+                        <span asp-validation-for="Order" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input asp-for="IsActive" type="checkbox" class="form-check-input" checked />
+                    <label asp-for="IsActive" class="form-check-label">Kích hoạt bài học ngay sau khi tạo</label>
+                </div>
+
+                <input type="hidden" asp-for="SkillId" />
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">Hủy</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i> Tạo bài học
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+

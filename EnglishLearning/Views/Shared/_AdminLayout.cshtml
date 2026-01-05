@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - EnglishLearning Admin</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/EnglishLearning.styles.css" asp-append-version="true" />
+    <style>
+        body {
+            overflow-x: hidden;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 250px;
+            background-color: #343a40;
+            padding-top: 20px;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        .sidebar .nav-link {
+            color: #adb5bd;
+            padding: 12px 20px;
+            border-left: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .sidebar .nav-link:hover {
+            color: #fff;
+            background-color: #495057;
+            border-left-color: #007bff;
+        }
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: #495057;
+            border-left-color: #007bff;
+        }
+        .sidebar .nav-link i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .sidebar-header {
+            padding: 20px;
+            color: #fff;
+            border-bottom: 1px solid #495057;
+            margin-bottom: 20px;
+        }
+        .sidebar-header h4 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+        .sidebar-header small {
+            color: #adb5bd;
+            font-size: 0.85rem;
+        }
+        .top-navbar {
+            background-color: #fff;
+            border-bottom: 1px solid #dee2e6;
+            padding: 10px 20px;
+            margin-left: 250px;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+        }
+        .nav-divider {
+            color: #6c757d;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            padding: 10px 20px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h4>EnglishLearning</h4>
+            <small>Quản trị hệ thống</small>
+        </div>
+        <nav class="nav flex-column">
+            <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Admin" ? "active" : "")" 
+               asp-controller="Admin" asp-action="Index">
+                <i class="bi bi-house-door"></i> Dashboard
+            </a>
+            
+            <div class="nav-divider">Kỹ năng</div>
+            
+            <a class="nav-link" 
+               asp-controller="Lessons" asp-action="Index" asp-route-skillId="1">
+                <i class="bi bi-earbuds"></i> Listening
+            </a>
+            
+            <a class="nav-link" 
+               asp-controller="Lessons" asp-action="Index" asp-route-skillId="2">
+                <i class="bi bi-mic"></i> Speaking
+            </a>
+            
+            <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Reading" ? "active" : "")" 
+               href="/Admin/Reading">
+                <i class="bi bi-book"></i> Reading
+            </a>
+            
+            <a class="nav-link" 
+               asp-controller="Lessons" asp-action="Index" asp-route-skillId="4">
+                <i class="bi bi-pencil"></i> Writing
+            </a>
+            
+            <form asp-controller="Auth" asp-action="Logout" method="post" class="px-3 mt-3">
+                <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                    <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                </button>
+            </form>
+        </nav>
+    </div>
+
+    <div class="top-navbar">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0">@ViewData["Title"]</h5>
+            </div>
+            <div>
+                <span class="text-muted">Xin chào, <strong>@User.Identity?.Name</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @RenderBody()
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+

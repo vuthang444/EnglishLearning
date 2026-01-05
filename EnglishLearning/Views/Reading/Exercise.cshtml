@@ -1,0 +1,373 @@
+@model CommonLib.DTOs.ReadingExerciseDto
+
+@{
+    ViewData["Title"] = Model.Title;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Cột trái: Nội dung bài đọc -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-book"></i> @Model.Title
+                        @if (!string.IsNullOrEmpty(Model.ReadingLevel))
+                        {
+                            <span class="badge bg-light text-dark ms-2">@Model.ReadingLevel</span>
+                        }
+                    </h4>
+                </div>
+                <div class="card-body" style="max-height: 80vh; overflow-y: auto;">
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <p class="text-muted mb-3">@Model.Description</p>
+                    }
+                    
+                    @if (!string.IsNullOrEmpty(Model.ReadingContent))
+                    {
+                        <div class="reading-content" style="white-space: pre-wrap; line-height: 1.8; font-size: 1.05rem;">
+                            @Model.ReadingContent
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Chưa có nội dung bài đọc.</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột phải: Câu hỏi -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-question-circle"></i> Câu hỏi trắc nghiệm
+                        <span class="badge bg-light text-dark ms-2" id="answeredCount">0/@Model.Questions.Count</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="readingExerciseForm">
+                        <input type="hidden" id="lessonId" value="@Model.LessonId" />
+                        <input type="hidden" id="startedAt" value="@DateTime.UtcNow.ToString("O")" />
+                        <input type="hidden" id="maxScore" value="@Model.MaxScore" />
+
+                        <div id="questionsContainer">
+                            @for (int i = 0; i < Model.Questions.Count; i++)
+                            {
+                                var question = Model.Questions[i];
+                                <div class="question-item mb-4 p-3 border rounded" data-question-id="@question.Id">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="mb-0">
+                                            <span class="badge bg-secondary">Câu @(i + 1)</span>
+                                            <span class="ms-2">@question.Question</span>
+                                        </h6>
+                                    </div>
+                                    
+                                    <div class="options mt-3">
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input answer-radio" 
+                                                   type="radio" 
+                                                   name="question_@question.Id" 
+                                                   id="q@(question.Id)_A" 
+                                                   value="A"
+                                                   data-question-id="@question.Id">
+                                            <label class="form-check-label" for="q@(question.Id)_A">
+                                                <strong>A.</strong> @question.OptionA
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input answer-radio" 
+                                                   type="radio" 
+                                                   name="question_@question.Id" 
+                                                   id="q@(question.Id)_B" 
+                                                   value="B"
+                                                   data-question-id="@question.Id">
+                                            <label class="form-check-label" for="q@(question.Id)_B">
+                                                <strong>B.</strong> @question.OptionB
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input answer-radio" 
+                                                   type="radio" 
+                                                   name="question_@question.Id" 
+                                                   id="q@(question.Id)_C" 
+                                                   value="C"
+                                                   data-question-id="@question.Id">
+                                            <label class="form-check-label" for="q@(question.Id)_C">
+                                                <strong>C.</strong> @question.OptionC
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input answer-radio" 
+                                                   type="radio" 
+                                                   name="question_@question.Id" 
+                                                   id="q@(question.Id)_D" 
+                                                   value="D"
+                                                   data-question-id="@question.Id">
+                                            <label class="form-check-label" for="q@(question.Id)_D">
+                                                <strong>D.</strong> @question.OptionD
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="button" class="btn btn-primary btn-lg" id="submitBtn">
+                                <i class="bi bi-check-circle"></i> Nộp bài
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="resetBtn">
+                                <i class="bi bi-arrow-clockwise"></i> Làm lại
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal kết quả -->
+<div class="modal fade" id="resultModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Kết quả bài làm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="resultContent">
+                <!-- Nội dung kết quả sẽ được load ở đây -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <a href="@Url.Action("Index", "Home")" class="btn btn-primary">Về trang chủ</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // State Management: Lưu trữ đáp án người dùng chọn
+    const userAnswers = {};
+    let startTime = new Date();
+    let timerInterval = null;
+
+    // Khởi tạo timer
+    function startTimer() {
+        startTime = new Date();
+        timerInterval = setInterval(() => {
+            const elapsed = Math.floor((new Date() - startTime) / 1000);
+            // Có thể hiển thị timer nếu cần
+        }, 1000);
+    }
+
+    // Lắng nghe sự kiện chọn đáp án
+    document.querySelectorAll('.answer-radio').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const questionId = parseInt(this.dataset.questionId);
+            const selectedAnswer = this.value;
+            
+            // Cập nhật state
+            userAnswers[questionId] = selectedAnswer;
+            
+            // Cập nhật UI - đánh dấu câu hỏi đã trả lời
+            const questionItem = this.closest('.question-item');
+            questionItem.classList.add('border-primary');
+            
+            // Cập nhật số câu đã trả lời
+            updateAnsweredCount();
+        });
+    });
+
+    // Cập nhật số câu đã trả lời
+    function updateAnsweredCount() {
+        const answeredCount = Object.keys(userAnswers).length;
+        const totalCount = @Model.Questions.Count;
+        document.getElementById('answeredCount').textContent = `${answeredCount}/${totalCount}`;
+    }
+
+    // Nút Reset
+    document.getElementById('resetBtn').addEventListener('click', function() {
+        if (confirm('Bạn có chắc chắn muốn làm lại? Tất cả đáp án đã chọn sẽ bị xóa.')) {
+            // Xóa tất cả đáp án đã chọn
+            document.querySelectorAll('.answer-radio').forEach(radio => {
+                radio.checked = false;
+            });
+            
+            // Xóa state
+            Object.keys(userAnswers).forEach(key => delete userAnswers[key]);
+            
+            // Xóa đánh dấu
+            document.querySelectorAll('.question-item').forEach(item => {
+                item.classList.remove('border-primary');
+            });
+            
+            // Reset timer
+            startTime = new Date();
+            updateAnsweredCount();
+        }
+    });
+
+    // Nút Submit
+    document.getElementById('submitBtn').addEventListener('click', function() {
+        const totalQuestions = @Model.Questions.Count;
+        const answeredCount = Object.keys(userAnswers).length;
+        
+        if (answeredCount < totalQuestions) {
+            if (!confirm(`Bạn mới trả lời ${answeredCount}/${totalQuestions} câu hỏi. Bạn có muốn nộp bài không?`)) {
+                return;
+            }
+        }
+
+        submitAnswers();
+    });
+
+    // Hàm submit bài làm
+    async function submitAnswers() {
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang xử lý...';
+
+        // Tính thời gian làm bài
+        const timeSpent = Math.floor((new Date() - startTime) / 1000);
+        if (timerInterval) {
+            clearInterval(timerInterval);
+        }
+
+        // Chuẩn bị dữ liệu
+        const submissionData = {
+            lessonId: parseInt(document.getElementById('lessonId').value),
+            startedAt: document.getElementById('startedAt').value,
+            timeSpentSeconds: timeSpent,
+            userAnswers: Object.keys(userAnswers).map(questionId => ({
+                questionId: parseInt(questionId),
+                selectedAnswer: userAnswers[questionId]
+            }))
+        };
+
+        try {
+            const response = await fetch('@Url.Action("Submit", "Reading")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(submissionData)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Hiển thị kết quả
+                displayResult(result.result);
+            } else {
+                alert('Lỗi: ' + (result.message || 'Không thể lưu kết quả'));
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Nộp bài';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Đã xảy ra lỗi khi nộp bài. Vui lòng thử lại.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Nộp bài';
+        }
+    }
+
+    // Hiển thị kết quả
+    function displayResult(result) {
+        const resultContent = document.getElementById('resultContent');
+        
+        let html = `
+            <div class="text-center mb-4">
+                <h3 class="mb-3">Kết quả bài làm</h3>
+                <div class="display-4 fw-bold ${result.percentage >= 80 ? 'text-success' : result.percentage >= 50 ? 'text-warning' : 'text-danger'}">
+                    ${result.score}/${result.maxScore}
+                </div>
+                <div class="h5 text-muted">${result.percentage}%</div>
+                <p class="text-muted">Thời gian làm bài: ${formatTime(result.timeSpentSeconds)}</p>
+            </div>
+            
+            <hr>
+            
+            <h5 class="mb-3">Chi tiết từng câu hỏi:</h5>
+            <div class="list-group">
+        `;
+
+        result.questionResults.forEach((qResult, index) => {
+            const isCorrect = qResult.isCorrect;
+            const badgeClass = isCorrect ? 'bg-success' : 'bg-danger';
+            const icon = isCorrect ? 'bi-check-circle-fill' : 'bi-x-circle-fill';
+            
+            html += `
+                <div class="list-group-item ${isCorrect ? 'list-group-item-success' : 'list-group-item-danger'}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-2">
+                                <span class="badge ${badgeClass} me-2">
+                                    <i class="bi ${icon}"></i> ${isCorrect ? 'Đúng' : 'Sai'}
+                                </span>
+                                Câu ${index + 1}: ${qResult.question}
+                            </h6>
+                            <div class="ms-4">
+                                <small class="text-muted">Đáp án bạn chọn: <strong>${qResult.selectedAnswer || 'Chưa chọn'}</strong></small><br>
+                                <small class="text-muted">Đáp án đúng: <strong class="text-success">${qResult.correctAnswer}</strong></small>
+                            </div>
+                        </div>
+                        <span class="badge bg-secondary">${qResult.score}/${qResult.score} điểm</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+            </div>
+            <div class="mt-3 text-center">
+                <a href="@Url.Action("Result", "Reading")/${result.submissionId}" class="btn btn-primary">
+                    Xem chi tiết kết quả
+                </a>
+            </div>
+        `;
+
+        resultContent.innerHTML = html;
+        
+        // Hiển thị modal
+        const modal = new bootstrap.Modal(document.getElementById('resultModal'));
+        modal.show();
+    }
+
+    // Format thời gian
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins} phút ${secs} giây`;
+    }
+
+    // Khởi động timer khi trang load
+    startTimer();
+    updateAnsweredCount();
+</script>
+
+<style>
+    .reading-content {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        text-align: justify;
+    }
+    
+    .question-item {
+        transition: all 0.3s ease;
+    }
+    
+    .question-item.border-primary {
+        border-width: 2px !important;
+        background-color: #f0f8ff;
+    }
+    
+    .form-check-input:checked {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+</style>
+

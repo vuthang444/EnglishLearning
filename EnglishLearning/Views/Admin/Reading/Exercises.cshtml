@@ -1,0 +1,115 @@
+@model List<CommonLib.Entities.Exercise>
+
+@{
+    ViewData["Title"] = "Quản lý bài tập Reading";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var lesson = ViewBag.Lesson as CommonLib.Entities.Lesson;
+}
+
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Quản lý bài tập</h2>
+            <p class="text-muted mb-0">Bài học: <strong>@lesson?.Title</strong></p>
+        </div>
+        <div>
+            <a href="@Url.Action("LessonDetail", new { id = lesson?.Id })" class="btn btn-secondary">Quay lại</a>
+            <a href="@Url.Action("Create", "Exercises", new { lessonId = lesson?.Id })" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Thêm bài tập mới
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Danh sách bài tập (@Model.Count)</h5>
+        </div>
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Câu hỏi</th>
+                                <th>Loại</th>
+                                <th>Thứ tự</th>
+                                <th>Số câu trả lời</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var exercise in Model.OrderBy(e => e.Order))
+                            {
+                                <tr>
+                                    <td>@exercise.Id</td>
+                                    <td>
+                                        <strong>@(exercise.Question.Length > 60 ? exercise.Question.Substring(0, 60) + "..." : exercise.Question)</strong>
+                                        @if (!string.IsNullOrEmpty(exercise.Content))
+                                        {
+                                            <br><small class="text-muted">@(exercise.Content.Length > 50 ? exercise.Content.Substring(0, 50) + "..." : exercise.Content)</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @switch (exercise.Type)
+                                        {
+                                            case CommonLib.Entities.ExerciseType.MultipleChoice:
+                                                <span class="badge bg-primary">Trắc nghiệm</span>
+                                                break;
+                                            case CommonLib.Entities.ExerciseType.FillInBlank:
+                                                <span class="badge bg-info">Điền vào chỗ trống</span>
+                                                break;
+                                            case CommonLib.Entities.ExerciseType.TrueFalse:
+                                                <span class="badge bg-warning">Đúng/Sai</span>
+                                                break;
+                                            case CommonLib.Entities.ExerciseType.Essay:
+                                                <span class="badge bg-success">Tự luận</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>@exercise.Order</td>
+                                    <td>
+                                        <span class="badge bg-secondary">@(exercise.Answers?.Count ?? 0)</span>
+                                    </td>
+                                    <td>
+                                        @if (exercise.IsActive)
+                                        {
+                                            <span class="badge bg-success">Hoạt động</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Tạm dừng</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="@Url.Action("Edit", "Exercises", new { id = exercise.Id })" class="btn btn-sm btn-warning" title="Sửa">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <form asp-action="Delete" asp-controller="Exercises" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa bài tập này?');">
+                                                <input type="hidden" name="id" value="@exercise.Id" />
+                                                <input type="hidden" name="lessonId" value="@lesson?.Id" />
+                                                <button type="submit" class="btn btn-sm btn-danger" title="Xóa">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info text-center">
+                    <i class="bi bi-info-circle"></i> Chưa có bài tập nào. Hãy thêm bài tập đầu tiên!
+                </div>
+            }
+        </div>
+    </div>
+</div>
+

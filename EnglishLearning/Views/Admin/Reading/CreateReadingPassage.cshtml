@@ -1,0 +1,258 @@
+@model CommonLib.DTOs.ReadingPassageDto
+
+@{
+    ViewData["Title"] = "Tạo bài đọc mới";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var skill = ViewBag.Skill as CommonLib.Entities.Skill;
+    var readingLevels = ViewBag.ReadingLevels as List<string> ?? new List<string> { "A1", "A2", "B1", "B2", "C1", "C2" };
+}
+
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Tạo bài đọc mới</h2>
+            <p class="text-muted mb-0">Kỹ năng: <strong>@skill?.Name</strong></p>
+        </div>
+        <a href="@Url.Action("Index")" class="btn btn-secondary">Quay lại</a>
+    </div>
+
+    <form asp-action="CreateReadingPassage" method="post" id="readingPassageForm">
+        <input type="hidden" asp-for="SkillId" />
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <!-- Phần 1: Nội dung bài đọc -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-file-text"></i> Phần 1: Nội dung bài đọc</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label asp-for="Title" class="form-label">Tiêu đề bài đọc *</label>
+                    <input asp-for="Title" class="form-control" placeholder="Ví dụ: Đọc hiểu về cuộc sống ở thành phố" />
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label">Mô tả ngắn</label>
+                    <textarea asp-for="Description" class="form-control" rows="2" placeholder="Mô tả ngắn gọn về bài đọc..."></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="ReadingLevel" class="form-label">Cấp độ (CEFR) *</label>
+                        <select asp-for="ReadingLevel" class="form-select">
+                            @foreach (var level in readingLevels)
+                            {
+                                <option value="@level">@level</option>
+                            }
+                        </select>
+                        <span asp-validation-for="ReadingLevel" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Level" class="form-label">Cấp độ hệ thống</label>
+                        <select asp-for="Level" class="form-select">
+                            <option value="1">Cơ bản</option>
+                            <option value="2">Trung bình</option>
+                            <option value="3">Nâng cao</option>
+                        </select>
+                        <span asp-validation-for="Level" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="ReadingContent" class="form-label">Nội dung bài đọc *</label>
+                    <textarea asp-for="ReadingContent" class="form-control" id="readingContent" rows="15" 
+                              placeholder="Dán hoặc nhập nội dung bài đọc ở đây. Bạn có thể sử dụng Enter để xuống dòng và tạo đoạn văn..."></textarea>
+                    <small class="form-text text-muted">
+                        <i class="bi bi-info-circle"></i> Hỗ trợ định dạng cơ bản: Enter để xuống dòng, có thể dán văn bản từ Word hoặc các nguồn khác.
+                    </small>
+                    <span asp-validation-for="ReadingContent" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phần 2: Bộ câu hỏi -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-question-circle"></i> Phần 2: Bộ câu hỏi trắc nghiệm</h5>
+            </div>
+            <div class="card-body">
+                <div id="questionsContainer">
+                    @if (Model.Questions != null && Model.Questions.Any())
+                    {
+                        @for (int i = 0; i < Model.Questions.Count; i++)
+                        {
+                            <div class="question-item mb-4 p-4 border rounded">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="mb-0">Câu hỏi @(i + 1)</h6>
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeQuestion(this)">
+                                        <i class="bi bi-trash"></i> Xóa
+                                    </button>
+                                </div>
+                                
+                                <input type="hidden" name="Questions[@i].Id" value="@Model.Questions[i].Id" />
+                                <input type="hidden" name="Questions[@i].Order" value="@(i + 1)" />
+
+                                <div class="mb-3">
+                                    <label class="form-label">Đề bài câu hỏi *</label>
+                                    <textarea name="Questions[@i].Question" class="form-control" rows="2" required>@Model.Questions[i].Question</textarea>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-2">
+                                        <label class="form-label">Phương án A *</label>
+                                        <input type="text" name="Questions[@i].OptionA" class="form-control" value="@Model.Questions[i].OptionA" required />
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <label class="form-label">Phương án B *</label>
+                                        <input type="text" name="Questions[@i].OptionB" class="form-control" value="@Model.Questions[i].OptionB" required />
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <label class="form-label">Phương án C *</label>
+                                        <input type="text" name="Questions[@i].OptionC" class="form-control" value="@Model.Questions[i].OptionC" required />
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <label class="form-label">Phương án D *</label>
+                                        <input type="text" name="Questions[@i].OptionD" class="form-control" value="@Model.Questions[i].OptionD" required />
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Đáp án đúng *</label>
+                                    <select name="Questions[@i].CorrectAnswer" class="form-select" required>
+                                        <option value="">-- Chọn đáp án đúng --</option>
+                                        <option value="A" selected="@(Model.Questions[i].CorrectAnswer == "A")">A</option>
+                                        <option value="B" selected="@(Model.Questions[i].CorrectAnswer == "B")">B</option>
+                                        <option value="C" selected="@(Model.Questions[i].CorrectAnswer == "C")">C</option>
+                                        <option value="D" selected="@(Model.Questions[i].CorrectAnswer == "D")">D</option>
+                                    </select>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+
+                <button type="button" class="btn btn-primary" onclick="addQuestion()">
+                    <i class="bi bi-plus-circle"></i> Thêm câu hỏi
+                </button>
+            </div>
+        </div>
+
+        <!-- Thông tin bổ sung -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Order" class="form-label">Thứ tự hiển thị</label>
+                        <input asp-for="Order" type="number" class="form-control" value="0" min="0" />
+                        <span asp-validation-for="Order" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check mt-4">
+                            <input asp-for="IsActive" type="checkbox" class="form-check-input" checked />
+                            <label asp-for="IsActive" class="form-check-label">Kích hoạt bài đọc ngay sau khi tạo</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <a href="@Url.Action("Index")" class="btn btn-secondary">Hủy</a>
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-check-circle"></i> Lưu bài đọc và câu hỏi
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    let questionIndex = @(Model.Questions?.Count ?? 0);
+
+    function addQuestion() {
+        const container = document.getElementById('questionsContainer');
+        const questionNumber = container.children.length + 1;
+        
+        const newQuestion = document.createElement('div');
+        newQuestion.className = 'question-item mb-4 p-4 border rounded';
+        newQuestion.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Câu hỏi ${questionNumber}</h6>
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeQuestion(this)">
+                    <i class="bi bi-trash"></i> Xóa
+                </button>
+            </div>
+            
+            <input type="hidden" name="Questions[${questionIndex}].Order" value="${questionNumber}" />
+
+            <div class="mb-3">
+                <label class="form-label">Đề bài câu hỏi *</label>
+                <textarea name="Questions[${questionIndex}].Question" class="form-control" rows="2" required placeholder="Nhập câu hỏi..."></textarea>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <label class="form-label">Phương án A *</label>
+                    <input type="text" name="Questions[${questionIndex}].OptionA" class="form-control" required placeholder="Nhập phương án A" />
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label class="form-label">Phương án B *</label>
+                    <input type="text" name="Questions[${questionIndex}].OptionB" class="form-control" required placeholder="Nhập phương án B" />
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label class="form-label">Phương án C *</label>
+                    <input type="text" name="Questions[${questionIndex}].OptionC" class="form-control" required placeholder="Nhập phương án C" />
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label class="form-label">Phương án D *</label>
+                    <input type="text" name="Questions[${questionIndex}].OptionD" class="form-control" required placeholder="Nhập phương án D" />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Đáp án đúng *</label>
+                <select name="Questions[${questionIndex}].CorrectAnswer" class="form-select" required>
+                    <option value="">-- Chọn đáp án đúng --</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                </select>
+            </div>
+        `;
+        
+        container.appendChild(newQuestion);
+        questionIndex++;
+        updateQuestionNumbers();
+    }
+
+    function removeQuestion(button) {
+        if (confirm('Bạn có chắc chắn muốn xóa câu hỏi này?')) {
+            button.closest('.question-item').remove();
+            updateQuestionNumbers();
+        }
+    }
+
+    function updateQuestionNumbers() {
+        const questions = document.querySelectorAll('.question-item');
+        questions.forEach((question, index) => {
+            const header = question.querySelector('h6');
+            if (header) {
+                header.textContent = `Câu hỏi ${index + 1}`;
+            }
+        });
+    }
+
+    // Format textarea cho ReadingContent - tự động điều chỉnh chiều cao
+    document.getElementById('readingContent').addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+    });
+</script>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+

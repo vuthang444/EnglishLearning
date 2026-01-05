@@ -1,0 +1,160 @@
+@model CommonLib.DTOs.ExerciseDto
+
+@{
+    ViewData["Title"] = "Sửa bài tập";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var lesson = ViewBag.Lesson as CommonLib.Entities.Lesson;
+}
+
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Sửa bài tập</h2>
+            <p class="text-muted mb-0">Bài học: <strong>@lesson?.Title</strong></p>
+        </div>
+        <a href="@Url.Action("Index", new { lessonId = lesson?.Id })" class="btn btn-secondary">Quay lại</a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form asp-action="Edit" method="post">
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="LessonId" />
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Question" class="form-label">Câu hỏi *</label>
+                    <textarea asp-for="Question" class="form-control" rows="3"></textarea>
+                    <span asp-validation-for="Question" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Content" class="form-label">Nội dung (URL audio, text, v.v.)</label>
+                    <textarea asp-for="Content" class="form-control" rows="3"></textarea>
+                    <span asp-validation-for="Content" class="text-danger"></span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Type" class="form-label">Loại bài tập *</label>
+                        <select asp-for="Type" class="form-select" id="exerciseType">
+                            <option value="1">Trắc nghiệm</option>
+                            <option value="2">Điền vào chỗ trống</option>
+                            <option value="3">Đúng/Sai</option>
+                            <option value="4">Tự luận</option>
+                            <option value="5">Nghe</option>
+                            <option value="6">Nói</option>
+                        </select>
+                        <span asp-validation-for="Type" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Order" class="form-label">Thứ tự</label>
+                        <input asp-for="Order" type="number" class="form-control" />
+                        <span asp-validation-for="Order" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input asp-for="IsActive" type="checkbox" class="form-check-input" />
+                    <label asp-for="IsActive" class="form-check-label">Hoạt động</label>
+                </div>
+
+                <div id="answersSection">
+                    <h5 class="mb-3">Câu trả lời</h5>
+                    <div id="answersContainer">
+                        @for (int i = 0; i < Model.Answers.Count; i++)
+                        {
+                            <div class="answer-item mb-3 p-3 border rounded">
+                                <input type="hidden" name="Answers[@i].Id" value="@Model.Answers[i].Id" />
+                                <div class="row">
+                                    <div class="col-md-8 mb-2">
+                                        <input type="text" name="Answers[@i].Text" class="form-control" value="@Model.Answers[i].Text" required />
+                                    </div>
+                                    <div class="col-md-2 mb-2">
+                                        <div class="form-check mt-2">
+                                            <input type="checkbox" name="Answers[@i].IsCorrect" class="form-check-input" checked="@Model.Answers[i].IsCorrect" />
+                                            <label class="form-check-label">Đúng</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 mb-2">
+                                        <div class="d-flex gap-2">
+                                            <input type="number" name="Answers[@i].Order" class="form-control" value="@Model.Answers[i].Order" />
+                                            <button type="button" class="btn btn-sm btn-danger" onclick="removeAnswer(this)">Xóa</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addAnswer()">Thêm câu trả lời</button>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                    <a href="@Url.Action("Index", new { lessonId = lesson?.Id })" class="btn btn-secondary">Hủy</a>
+                    <button type="submit" class="btn btn-primary">Cập nhật</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    let answerIndex = @Model.Answers.Count;
+
+    function addAnswer() {
+        const container = document.getElementById('answersContainer');
+        const newAnswer = document.createElement('div');
+        newAnswer.className = 'answer-item mb-3 p-3 border rounded';
+        newAnswer.innerHTML = `
+            <div class="row">
+                <div class="col-md-8 mb-2">
+                    <input type="text" name="Answers[${answerIndex}].Text" class="form-control" placeholder="Nội dung câu trả lời" required />
+                </div>
+                <div class="col-md-2 mb-2">
+                    <div class="form-check mt-2">
+                        <input type="checkbox" name="Answers[${answerIndex}].IsCorrect" class="form-check-input" />
+                        <label class="form-check-label">Đúng</label>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-2">
+                    <div class="d-flex gap-2">
+                        <input type="number" name="Answers[${answerIndex}].Order" class="form-control" value="${answerIndex + 1}" />
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeAnswer(this)">Xóa</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.appendChild(newAnswer);
+        answerIndex++;
+    }
+
+    function removeAnswer(button) {
+        button.closest('.answer-item').remove();
+    }
+
+    // Ẩn/hiện phần câu trả lời tùy theo loại bài tập
+    document.getElementById('exerciseType').addEventListener('change', function() {
+        const type = parseInt(this.value);
+        const answersSection = document.getElementById('answersSection');
+        if (type === 4 || type === 5 || type === 6) { // Essay, Audio, Speaking
+            answersSection.style.display = 'none';
+        } else {
+            answersSection.style.display = 'block';
+        }
+    });
+
+    // Kiểm tra khi load trang
+    window.addEventListener('load', function() {
+        const type = parseInt(document.getElementById('exerciseType').value);
+        const answersSection = document.getElementById('answersSection');
+        if (type === 4 || type === 5 || type === 6) {
+            answersSection.style.display = 'none';
+        }
+    });
+</script>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+

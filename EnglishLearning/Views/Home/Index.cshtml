@@ -1,0 +1,229 @@
+﻿@{
+    ViewData["Title"] = "Trang chủ";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .hero-section {
+        background: linear-gradient(180deg, #4A90E2 0%, #2E5C8A 100%);
+        min-height: 90vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+        padding: 80px 20px;
+    }
+
+    .hero-content {
+        text-align: center;
+        color: white;
+        z-index: 2;
+        position: relative;
+    }
+
+    .hero-title {
+        font-size: 4.5rem;
+        font-weight: 700;
+        line-height: 1.2;
+        margin-bottom: 30px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .hero-subtitle {
+        font-size: 2rem;
+        font-weight: 400;
+        margin-bottom: 40px;
+        opacity: 0.95;
+    }
+
+    .hero-cta {
+        background: white;
+        color: #2E5C8A;
+        padding: 18px 50px;
+        font-size: 1.3rem;
+        font-weight: 600;
+        border-radius: 50px;
+        border: none;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .hero-cta:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        color: #2E5C8A;
+    }
+
+    .ai-icon {
+        display: inline-block;
+        margin: 0 15px;
+        vertical-align: middle;
+    }
+
+    .ai-icon-microphone {
+        width: 60px;
+        height: 40px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+
+    .ai-icon-microphone::before {
+        content: '🎤';
+        font-size: 24px;
+    }
+
+    .ai-icon-robot {
+        width: 70px;
+        height: 50px;
+        background: white;
+        border-radius: 35px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .ai-icon-robot::before {
+        content: '🤖';
+        font-size: 32px;
+    }
+
+    .features-section {
+        padding: 80px 20px;
+        background: white;
+    }
+
+    .feature-card {
+        text-align: center;
+        padding: 40px 20px;
+        border-radius: 15px;
+        transition: transform 0.3s ease;
+        margin-bottom: 30px;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .feature-icon {
+        font-size: 3rem;
+        margin-bottom: 20px;
+    }
+
+    .feature-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: #2E5C8A;
+    }
+
+    .feature-description {
+        color: #666;
+        line-height: 1.6;
+    }
+
+    @@media (max-width: 768px) {
+        .hero-title {
+            font-size: 2.5rem;
+        }
+        .hero-subtitle {
+            font-size: 1.3rem;
+        }
+        .hero-cta {
+            padding: 15px 35px;
+            font-size: 1.1rem;
+        }
+    }
+</style>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert" style="margin: 0; border-radius: 0;">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title">
+            Nền tảng Học
+            <span class="ai-icon ai-icon-microphone"></span>
+            <br />
+            <span class="ai-icon ai-icon-robot"></span>
+            và Luyện thi
+            <br />
+            <span style="font-weight: 300;">thông minh</span>
+        </h1>
+        <p class="hero-subtitle">
+            Học tiếng Anh hiệu quả với công nghệ AI hiện đại
+        </p>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <a href="#features" class="hero-cta">KHÁM PHÁ NGAY</a>
+        }
+        else
+        {
+            <a asp-controller="Auth" asp-action="Login" class="hero-cta">BẮT ĐẦU HỌC</a>
+        }
+    </div>
+</div>
+
+<!-- Features Section -->
+<div id="features" class="features-section">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="display-4 fw-bold" style="color: #2E5C8A;">Kỹ năng bạn sẽ học</h2>
+            <p class="lead text-muted">Phát triển toàn diện 4 kỹ năng tiếng Anh</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-3 col-sm-6">
+                <div class="feature-card">
+                    <div class="feature-icon">👂</div>
+                    <h3 class="feature-title">Listening</h3>
+                    <p class="feature-description">Luyện nghe với các bài tập đa dạng, từ cơ bản đến nâng cao</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="feature-card">
+                    <div class="feature-icon">🎤</div>
+                    <h3 class="feature-title">Speaking</h3>
+                    <p class="feature-description">Phát âm chuẩn và tự tin giao tiếp với AI hỗ trợ</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="feature-card">
+                    <div class="feature-icon">📖</div>
+                    <h3 class="feature-title">Reading</h3>
+                    <p class="feature-description">Đọc hiểu với các bài tập trắc nghiệm thông minh</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="feature-card">
+                    <div class="feature-icon">✍️</div>
+                    <h3 class="feature-title">Writing</h3>
+                    <p class="feature-description">Viết bài luận và nhận phản hồi từ hệ thống</p>
+                </div>
+            </div>
+        </div>
+
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <div class="text-center mt-5">
+                <a asp-controller="Reading" asp-action="Exercise" asp-route-lessonId="1" class="btn btn-primary btn-lg">
+                    Bắt đầu làm bài tập Reading
+                </a>
+            </div>
+        }
+    </div>
+</div>

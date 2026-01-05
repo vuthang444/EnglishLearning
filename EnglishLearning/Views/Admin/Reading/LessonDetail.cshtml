@@ -1,0 +1,192 @@
+@model CommonLib.Entities.Lesson
+
+@{
+    ViewData["Title"] = "Chi tiết bài học";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var exercises = ViewBag.Exercises as List<CommonLib.Entities.Exercise>;
+    var exerciseCount = ViewBag.ExerciseCount as int? ?? 0;
+}
+
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Chi tiết bài học</h2>
+            <p class="text-muted mb-0">@Model.Title</p>
+        </div>
+        <div>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">Quay lại</a>
+            <a href="@Url.Action("EditLesson", new { id = Model.Id })" class="btn btn-warning">Sửa bài học</a>
+            <a href="@Url.Action("Exercises", new { lessonId = Model.Id })" class="btn btn-primary">Quản lý bài tập</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Thông tin bài học</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th width="150">Tiêu đề:</th>
+                            <td><strong>@Model.Title</strong></td>
+                        </tr>
+                        <tr>
+                            <th>Mô tả:</th>
+                            <td>@(string.IsNullOrEmpty(Model.Description) ? "Chưa có mô tả" : Model.Description)</td>
+                        </tr>
+                        @if (!string.IsNullOrEmpty(Model.ReadingLevel))
+                        {
+                            <tr>
+                                <th>Cấp độ CEFR:</th>
+                                <td><span class="badge bg-info">@Model.ReadingLevel</span></td>
+                            </tr>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.ReadingContent))
+                        {
+                            <tr>
+                                <th>Nội dung bài đọc:</th>
+                                <td>
+                                    <div class="border p-3 bg-light rounded" style="max-height: 500px; overflow-y: auto; white-space: pre-wrap;">
+                                        @Model.ReadingContent
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        <tr>
+                            <th>Cấp độ:</th>
+                            <td>
+                                @if (Model.Level == 1)
+                                {
+                                    <span class="badge bg-info">Cơ bản</span>
+                                }
+                                else if (Model.Level == 2)
+                                {
+                                    <span class="badge bg-warning">Trung bình</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">Nâng cao</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Thứ tự:</th>
+                            <td>@Model.Order</td>
+                        </tr>
+                        <tr>
+                            <th>Trạng thái:</th>
+                            <td>
+                                @if (Model.IsActive)
+                                {
+                                    <span class="badge bg-success">Hoạt động</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Tạm dừng</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Ngày tạo:</th>
+                            <td>@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                        </tr>
+                        @if (Model.UpdatedAt.HasValue)
+                        {
+                            <tr>
+                                <th>Cập nhật lần cuối:</th>
+                                <td>@Model.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm")</td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+
+            <!-- Danh sách bài tập -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Danh sách bài tập (@exerciseCount)</h5>
+                    <a href="@Url.Action("Exercises", new { lessonId = Model.Id })" class="btn btn-sm btn-primary">
+                        <i class="bi bi-plus-circle"></i> Thêm bài tập
+                    </a>
+                </div>
+                <div class="card-body">
+                    @if (exercises != null && exercises.Any())
+                    {
+                        <div class="list-group">
+                            @foreach (var exercise in exercises.OrderBy(e => e.Order))
+                            {
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">@exercise.Question</h6>
+                                            <p class="mb-1 text-muted small">
+                                                Loại: 
+                                                @switch (exercise.Type)
+                                                {
+                                                    case CommonLib.Entities.ExerciseType.MultipleChoice:
+                                                        <span class="badge bg-primary">Trắc nghiệm</span>
+                                                        break;
+                                                    case CommonLib.Entities.ExerciseType.FillInBlank:
+                                                        <span class="badge bg-info">Điền vào chỗ trống</span>
+                                                        break;
+                                                    case CommonLib.Entities.ExerciseType.TrueFalse:
+                                                        <span class="badge bg-warning">Đúng/Sai</span>
+                                                        break;
+                                                    case CommonLib.Entities.ExerciseType.Essay:
+                                                        <span class="badge bg-success">Tự luận</span>
+                                                        break;
+                                                }
+                                                | Số câu trả lời: @(exercise.Answers?.Count ?? 0)
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <a href="@Url.Action("Edit", "Exercises", new { id = exercise.Id })" class="btn btn-sm btn-warning">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center">
+                            <i class="bi bi-info-circle"></i> Chưa có bài tập nào. Hãy thêm bài tập đầu tiên!
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Thống kê</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Tổng số bài tập:</strong>
+                        <span class="badge bg-primary float-end">@exerciseCount</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Bài tập hoạt động:</strong>
+                        <span class="badge bg-success float-end">@(exercises?.Count(e => e.IsActive) ?? 0)</span>
+                    </div>
+                    <hr>
+                    <div class="d-grid gap-2">
+                        <a href="@Url.Action("Exercises", new { lessonId = Model.Id })" class="btn btn-primary">
+                            <i class="bi bi-list-check"></i> Quản lý tất cả bài tập
+                        </a>
+                        <a href="@Url.Action("EditLesson", new { id = Model.Id })" class="btn btn-outline-warning">
+                            <i class="bi bi-pencil"></i> Chỉnh sửa bài học
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
