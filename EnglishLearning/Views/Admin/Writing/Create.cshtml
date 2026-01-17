@@ -1,0 +1,198 @@
+@model CommonLib.DTOs.WritingPassageDto
+
+@{
+    ViewData["Title"] = "Tạo bài viết mới";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var difficultyLevels = new List<string> { "A1", "A2", "B1", "B2", "C1", "C2" };
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2>Tạo bài viết mới</h2>
+            <hr />
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger">
+                    <h5>Có lỗi xảy ra:</h5>
+                    <ul>
+                        @foreach (var key in ViewData.ModelState.Keys)
+                        {
+                            var errors = ViewData.ModelState[key]?.Errors;
+                            if (errors != null && errors.Count > 0)
+                            {
+                                foreach (var error in errors)
+                                {
+                                    <li><strong>@key:</strong> @error.ErrorMessage</li>
+                                }
+                            }
+                        }
+                    </ul>
+                </div>
+            }
+
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="SkillId" value="@(Model?.SkillId ?? ViewBag.SkillId)" />
+
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5>Thông tin cơ bản</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label asp-for="Title" class="form-label">Tiêu đề <span class="text-danger">*</span></label>
+                                    <input asp-for="Title" class="form-control" required />
+                                    <span asp-validation-for="Title" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Description" class="form-label">Mô tả</label>
+                                    <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                                    <span asp-validation-for="Description" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="WritingTopic" class="form-label">Chủ đề <span class="text-danger">*</span></label>
+                                    <input asp-for="WritingTopic" class="form-control" required placeholder="Ví dụ: Công nghệ và Giáo dục, Environment, etc." />
+                                    <span asp-validation-for="WritingTopic" class="text-danger"></span>
+                                    <small class="form-text text-muted">Nhập chủ đề và nhấn nút "Tạo tự động" để AI tạo đề bài</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <button type="button" class="btn btn-info" id="btnGenerateContent">
+                                        <i class="bi bi-magic"></i> Tạo đề bài tự động bằng AI
+                                    </button>
+                                    <span id="generatingStatus" class="ms-2 text-muted" style="display: none;">
+                                        <i class="bi bi-hourglass-split"></i> Đang tạo đề bài...
+                                    </span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="WritingPrompt" class="form-label">Đề bài Writing Task 2 <span class="text-danger">*</span></label>
+                                    <textarea asp-for="WritingPrompt" class="form-control" rows="6" required placeholder="Đề bài Writing Task 2 chi tiết..."></textarea>
+                                    <span asp-validation-for="WritingPrompt" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="WritingHints" class="form-label">Gợi ý phát triển ý tưởng</label>
+                                    <textarea asp-for="WritingHints" class="form-control" rows="4" placeholder="Các gợi ý để học viên phát triển ý tưởng, cấu trúc bài viết..."></textarea>
+                                    <span asp-validation-for="WritingHints" class="text-danger"></span>
+                                    <small class="form-text text-muted">Gợi ý sẽ được hiển thị cho học viên để hỗ trợ viết bài</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5>Cấu hình</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label asp-for="WritingLevel" class="form-label">Cấp độ</label>
+                                    <select asp-for="WritingLevel" class="form-select">
+                                        @foreach (var level in difficultyLevels)
+                                        {
+                                            <option value="@level" selected="@(level == "B2")">@level</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="WritingLevel" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="WordLimit" class="form-label">Giới hạn số từ</label>
+                                    <input asp-for="WordLimit" class="form-control" type="number" min="50" max="1000" value="@(Model?.WordLimit ?? 250)" />
+                                    <span asp-validation-for="WordLimit" class="text-danger"></span>
+                                    <small class="form-text text-muted">Mặc định: 250 từ (IELTS Task 2)</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="TimeLimitMinutes" class="form-label">Thời gian giới hạn (phút)</label>
+                                    <input asp-for="TimeLimitMinutes" class="form-control" type="number" min="5" max="180" value="@(Model?.TimeLimitMinutes ?? 40)" />
+                                    <span asp-validation-for="TimeLimitMinutes" class="text-danger"></span>
+                                    <small class="form-text text-muted">Mặc định: 40 phút</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input asp-for="IsActive" class="form-check-input" type="checkbox" checked />
+                                        <label asp-for="IsActive" class="form-check-label">Kích hoạt</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Lưu bài viết
+                    </button>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('btnGenerateContent').addEventListener('click', async function() {
+            const topic = document.getElementById('WritingTopic').value;
+            const level = document.getElementById('WritingLevel').value;
+            const statusEl = document.getElementById('generatingStatus');
+            const btn = this;
+
+            if (!topic.trim()) {
+                alert('Vui lòng nhập chủ đề trước!');
+                return;
+            }
+
+            btn.disabled = true;
+            statusEl.style.display = 'inline';
+
+            try {
+                const response = await fetch('/Admin/Writing/GenerateContent', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify({ topic: topic, level: level })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('Title').value = data.title || '';
+                    document.getElementById('WritingPrompt').value = data.prompt || '';
+                    document.getElementById('WritingHints').value = data.hints || '';
+                    alert('Đã tạo đề bài tự động thành công!');
+                } else {
+                    alert('Lỗi: ' + (data.message || 'Không thể tạo đề bài'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Đã xảy ra lỗi khi tạo đề bài. Vui lòng thử lại.');
+            } finally {
+                btn.disabled = false;
+                statusEl.style.display = 'none';
+            }
+        });
+    </script>
+}
+
+

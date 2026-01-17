@@ -36,6 +36,7 @@ namespace DataServiceLib.Repositories
         {
             return await _context.Submissions
                 .Include(s => s.Lesson)
+                .ThenInclude(l => l!.Skill)
                 .Where(s => s.UserId == userId)
                 .OrderByDescending(s => s.CreatedAt)
                 .ToListAsync();

@@ -6,6 +6,7 @@ using CommonLib.DTOs;
 using CommonLib.Entities;
 using System.Text.Json;
 using System.Security.Claims;
+using System.Linq;
 
 namespace EnglishLearning.Controllers
 {
@@ -15,18 +16,65 @@ namespace EnglishLearning.Controllers
         private readonly ILessonRepository _lessonRepository;
         private readonly IExerciseRepository _exerciseRepository;
         private readonly ISubmissionRepository _submissionRepository;
+        private readonly ISkillRepository _skillRepository;
         private readonly ILogger<ReadingController> _logger;
 
         public ReadingController(
             ILessonRepository lessonRepository,
             IExerciseRepository exerciseRepository,
             ISubmissionRepository submissionRepository,
+            ISkillRepository skillRepository,
             ILogger<ReadingController> logger)
         {
             _lessonRepository = lessonRepository;
             _exerciseRepository = exerciseRepository;
             _submissionRepository = submissionRepository;
+            _skillRepository = skillRepository;
             _logger = logger;
+        }
+
+        // Hiển thị danh sách bài tập Reading
+        [HttpGet]
+        [Route("Reading")]
+        [Route("Reading/Index")]
+        public async Task<IActionResult> Index()
+        {
+            var readingSkill = await _skillRepository.GetByNameAsync("Reading");
+            if (readingSkill == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy kỹ năng Reading";
+                return RedirectToAction("Dashboard", "Home");
+            }
+
+            var lessons = await _lessonRepository.GetBySkillIdAsync(readingSkill.Id);
+            var activeLessons = lessons.Where(l => l.IsActive).OrderBy(l => l.Order).ToList();
+
+            // Lấy số lượng câu hỏi cho mỗi bài học
+            var lessonExerciseCounts = new Dictionary<int, int>();
+            foreach (var lesson in activeLessons)
+            {
+                var exercises = await _exerciseRepository.GetByLessonIdAsync(lesson.Id);
+                lessonExerciseCounts[lesson.Id] = exercises?.Count ?? 0;
+            }
+            ViewBag.LessonExerciseCounts = lessonExerciseCounts;
+
+            // Lấy thông tin submission của user
+            var submissions = new Dictionary<int, Submission>();
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out int userId))
+            {
+                foreach (var lesson in activeLessons)
+                {
+                    var submission = await _submissionRepository.GetByUserAndLessonAsync(userId, lesson.Id);
+                    if (submission != null)
+                    {
+                        submissions[lesson.Id] = submission;
+                    }
+                }
+            }
+            ViewBag.Submissions = submissions;
+
+            return View("~/Views/Reading/Index.cshtml", activeLessons);
         }
 
         // Hiển thị bài đọc và câu hỏi

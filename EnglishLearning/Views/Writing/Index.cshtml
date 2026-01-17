@@ -1,0 +1,110 @@
+@model List<CommonLib.Entities.Lesson>
+
+@{
+    ViewData["Title"] = "Bài tập Writing";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var submissions = ViewBag.Submissions as Dictionary<int, CommonLib.Entities.Submission> ?? new Dictionary<int, CommonLib.Entities.Submission>();
+}
+
+<div class="container my-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-3">
+                <i class="bi bi-pencil-square text-primary"></i> Bài tập Writing
+            </h2>
+            <p class="text-muted">Luyện tập kỹ năng viết tiếng Anh với AI chấm điểm tự động theo rubric IELTS</p>
+        </div>
+    </div>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> Chưa có bài tập nào.
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var lesson in Model)
+            {
+                var submission = submissions.ContainsKey(lesson.Id) ? submissions[lesson.Id] : null;
+                var hasCompleted = submission != null;
+                var score = hasCompleted ? submission.Score : 0;
+                var maxScore = hasCompleted ? submission.MaxScore : 100;
+
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h5 class="card-title mb-0">@lesson.Title</h5>
+                                @if (!string.IsNullOrEmpty(lesson.WritingLevel))
+                                {
+                                    <span class="badge bg-info">@lesson.WritingLevel</span>
+                                }
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(lesson.Description))
+                            {
+                                <p class="card-text text-muted small">@lesson.Description</p>
+                            }
+
+                            @if (!string.IsNullOrEmpty(lesson.WritingTopic))
+                            {
+                                <p class="card-text">
+                                    <strong>Chủ đề:</strong> @lesson.WritingTopic
+                                </p>
+                            }
+
+                            <div class="mb-3">
+                                <small class="text-muted">
+                                    <i class="bi bi-file-text"></i> Từ: @(lesson.WordLimit?.ToString() ?? "Không giới hạn")
+                                    <br>
+                                    <i class="bi bi-clock"></i> Thời gian: @(lesson.TimeLimitMinutes?.ToString() ?? "Không giới hạn") phút
+                                </small>
+                            </div>
+
+                            @if (hasCompleted)
+                            {
+                                <div class="mb-3">
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar @(score >= 80 ? "bg-success" : score >= 60 ? "bg-warning" : "bg-danger")" 
+                                             role="progressbar" 
+                                             style="width: @score%"
+                                             aria-valuenow="@score" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                            @score/@maxScore điểm
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            <div class="d-grid gap-2">
+                                @if (hasCompleted)
+                                {
+                                    <a href="@Url.Action("Exercise", new { lessonId = lesson.Id })" class="btn btn-outline-primary">
+                                        <i class="bi bi-arrow-repeat"></i> Làm lại
+                                    </a>
+                                    @if (submission != null)
+                                    {
+                                        <a href="@Url.Action("Result", new { submissionId = submission.Id })" class="btn btn-outline-info">
+                                            <i class="bi bi-eye"></i> Xem kết quả
+                                        </a>
+                                    }
+                                }
+                                else
+                                {
+                                    <a href="@Url.Action("Exercise", new { lessonId = lesson.Id })" class="btn btn-primary">
+                                        <i class="bi bi-pencil"></i> Bắt đầu viết
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+

@@ -7,6 +7,7 @@ using CommonLib.Services;
 using DataServiceLib.Data;
 using DataServiceLib.Repositories;
 using EnglishLearning.Middleware;
+using EnglishLearning.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,10 +25,15 @@ builder.Services.AddScoped<ISkillRepository, SkillRepository>();
 builder.Services.AddScoped<ILessonRepository, LessonRepository>();
 builder.Services.AddScoped<IExerciseRepository, ExerciseRepository>();
 builder.Services.AddScoped<ISubmissionRepository, SubmissionRepository>();
+builder.Services.AddScoped<ICourseRepository, CourseRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
 // Đăng ký Services
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IOpenAIService, OpenAIService>();
+builder.Services.AddScoped<IMoMoService, MoMoService>();
+builder.Services.AddHttpClient();
 
 // Cấu hình JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");

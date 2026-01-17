@@ -1,0 +1,361 @@
+@model CommonLib.Entities.Submission
+
+@{
+    ViewData["Title"] = "Kết quả Writing";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var lesson = ViewBag.Lesson as CommonLib.Entities.Lesson;
+    var evaluation = ViewBag.Evaluation as Dictionary<string, object> ?? new Dictionary<string, object>();
+    
+    // Helper functions
+    double GetDoubleValue(string key)
+    {
+        if (!evaluation.ContainsKey(key)) return 0;
+        var value = evaluation[key];
+        if (value is System.Text.Json.JsonElement jsonElement)
+        {
+            if (jsonElement.ValueKind == System.Text.Json.JsonValueKind.Number)
+                return jsonElement.GetDouble();
+            if (jsonElement.ValueKind == System.Text.Json.JsonValueKind.String)
+            {
+                if (double.TryParse(jsonElement.GetString(), out var doubleVal))
+                    return doubleVal;
+                return 0;
+            }
+        }
+        if (value is double doubleValue) return doubleValue;
+        if (value is int intValue) return intValue;
+        if (value is string strValue && double.TryParse(strValue, out var parsedDouble))
+            return parsedDouble;
+        return 0;
+    }
+    
+    string GetStringValue(string key)
+    {
+        if (!evaluation.ContainsKey(key)) return "";
+        var value = evaluation[key];
+        if (value is System.Text.Json.JsonElement jsonElement)
+        {
+            if (jsonElement.ValueKind == System.Text.Json.JsonValueKind.String)
+                return jsonElement.GetString() ?? "";
+            return jsonElement.ToString();
+        }
+        return value?.ToString() ?? "";
+    }
+    
+    // Get grammar errors
+    List<Dictionary<string, object>> GetGrammarErrors()
+    {
+        var errors = new List<Dictionary<string, object>>();
+        if (!evaluation.ContainsKey("grammarErrors")) return errors;
+        
+        var value = evaluation["grammarErrors"];
+        if (value is List<object> list)
+        {
+            foreach (var item in list)
+            {
+                if (item is Dictionary<string, object> dict)
+                {
+                    errors.Add(dict);
+                }
+            }
+        }
+        return errors;
+    }
+    
+    var grammarErrors = GetGrammarErrors();
+    var essay = GetStringValue("essay");
+    var wordCount = evaluation.ContainsKey("wordCount") ? (int)Convert.ToDouble(evaluation["wordCount"]) : 0;
+}
+
+<div class="container my-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-check-circle"></i> Kết quả bài viết
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @if (lesson != null)
+                    {
+                        <div class="mb-4">
+                            <h5>@lesson.Title</h5>
+                            @if (!string.IsNullOrEmpty(lesson.WritingTopic))
+                            {
+                                <p class="text-muted">Chủ đề: @lesson.WritingTopic</p>
+                            }
+                        </div>
+                    }
+
+                    <!-- Score Summary -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card text-center bg-light">
+                                <div class="card-body">
+                                    <h6 class="text-muted">Điểm tổng</h6>
+                                    <h2 class="text-primary mb-0">@Model.Score/@Model.MaxScore</h2>
+                                    <div class="progress mt-2" style="height: 10px;">
+                                        <div class="progress-bar @(Model.Score >= 80 ? "bg-success" : Model.Score >= 60 ? "bg-warning" : "bg-danger")" 
+                                             style="width: @Model.Score%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center bg-light">
+                                <div class="card-body">
+                                    <h6 class="text-muted">Task Response</h6>
+                                    @{
+                                        var taskScore = GetDoubleValue("taskResponseScore");
+                                    }
+                                    <h2 class="text-info mb-0">@taskScore.ToString("F1")/25</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center bg-light">
+                                <div class="card-body">
+                                    <h6 class="text-muted">Coherence</h6>
+                                    @{
+                                        var coherenceScore = GetDoubleValue("coherenceScore");
+                                    }
+                                    <h2 class="text-success mb-0">@coherenceScore.ToString("F1")/25</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center bg-light">
+                                <div class="card-body">
+                                    <h6 class="text-muted">Lexical & Grammar</h6>
+                                    @{
+                                        var lexicalScore = GetDoubleValue("lexicalScore");
+                                        var grammarScore = GetDoubleValue("grammarScore");
+                                        var totalScore = lexicalScore + grammarScore;
+                                    }
+                                    <h2 class="text-warning mb-0">@totalScore.ToString("F1")/50</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bài viết với highlight lỗi -->
+                    @if (!string.IsNullOrEmpty(essay))
+                    {
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Bài viết của bạn</h6>
+                                <span class="badge bg-info">@wordCount từ</span>
+                            </div>
+                            <div class="card-body">
+                                <div id="essayText" class="p-3 border rounded" style="min-height: 200px; font-size: 16px; line-height: 1.8; white-space: pre-wrap;">
+                                    @essay
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Grammar Errors -->
+                    @if (grammarErrors.Any())
+                    {
+                        <div class="card mb-4 border-danger">
+                            <div class="card-header bg-danger text-white">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-exclamation-triangle"></i> Lỗi ngữ pháp (@grammarErrors.Count)
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group">
+                                    @foreach (var error in grammarErrors)
+                                    {
+                                        var text = error.ContainsKey("text") ? error["text"].ToString() : "";
+                                        var correction = error.ContainsKey("correction") ? error["correction"].ToString() : "";
+                                        var reason = error.ContainsKey("reason") ? error["reason"].ToString() : "";
+                                        
+                                        <div class="list-group-item">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">
+                                                    <span class="text-danger">"@text"</span>
+                                                </h6>
+                                            </div>
+                                            <p class="mb-1">
+                                                <strong>Sửa thành:</strong> 
+                                                <span class="text-success">"@correction"</span>
+                                            </p>
+                                            @if (!string.IsNullOrEmpty(reason))
+                                            {
+                                                <small class="text-muted">@reason</small>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Detailed Feedback -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0">Task Response</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-0">@GetStringValue("taskResponseFeedback")</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0">Coherence & Cohesion</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-0">@GetStringValue("coherenceFeedback")</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="mb-0">Lexical Resource</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-2">@GetStringValue("lexicalFeedback")</p>
+                                    @{
+                                        var suggestedVocab = evaluation.ContainsKey("suggestedVocabulary") ? evaluation["suggestedVocabulary"] : null;
+                                        List<string> vocabList = new List<string>();
+                                        if (suggestedVocab is List<object> vocabObj)
+                                        {
+                                            vocabList = vocabObj.Select(v => v.ToString()).ToList();
+                                        }
+                                    }
+                                    @if (vocabList.Any())
+                                    {
+                                        <div class="mt-2">
+                                            <strong>Từ vựng gợi ý:</strong>
+                                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                                @foreach (var word in vocabList)
+                                                {
+                                                    <span class="badge bg-primary">@word</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-danger text-white">
+                                    <h6 class="mb-0">Grammar</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-0">@GetStringValue("grammarFeedback")</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tone Feedback -->
+                    @{
+                        var toneFeedback = GetStringValue("toneFeedback");
+                    }
+                    @if (!string.IsNullOrEmpty(toneFeedback))
+                    {
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">Đánh giá về Tone</h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-0">@toneFeedback</p>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- General Feedback -->
+                    @{
+                        var generalFeedback = GetStringValue("generalFeedback");
+                    }
+                    @if (!string.IsNullOrEmpty(generalFeedback))
+                    {
+                        <div class="card mb-4 border-info">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-chat-dots"></i> Phản hồi tổng quan từ AI
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-0">@generalFeedback</p>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Actions -->
+                    <div class="d-flex gap-2">
+                        <a href="@Url.Action("Exercise", new { lessonId = lesson?.Id })" class="btn btn-primary">
+                            <i class="bi bi-arrow-repeat"></i> Làm lại
+                        </a>
+                        <a href="@Url.Action("Index")" class="btn btn-secondary">
+                            <i class="bi bi-list"></i> Danh sách bài tập
+                        </a>
+                    </div>
+
+                    <!-- Submission Info -->
+                    <div class="mt-4 text-muted small">
+                        <p class="mb-0">
+                            <i class="bi bi-clock"></i> Hoàn thành: @Model.CompletedAt?.ToString("dd/MM/yyyy HH:mm:ss")
+                            @if (Model.TimeSpentSeconds > 0)
+                            {
+                                <span class="ms-3">
+                                    <i class="bi bi-hourglass"></i> Thời gian: @(Model.TimeSpentSeconds / 60) phút
+                                </span>
+                            }
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Highlight grammar errors in essay text
+        @if (grammarErrors.Any() && !string.IsNullOrEmpty(essay))
+        {
+            <text>
+            const essayText = document.getElementById('essayText');
+            const grammarErrors = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(grammarErrors));
+            
+            if (essayText && grammarErrors.length > 0) {
+                let text = essayText.innerHTML;
+                
+                grammarErrors.forEach(error => {
+                    const errorText = error.text || '';
+                    const correction = error.correction || '';
+                    const reason = error.reason || '';
+                    
+                    if (errorText) {
+                        // Escape special regex characters
+                        const escapedText = errorText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        const regex = new RegExp(`\\b${escapedText}\\b`, 'gi');
+                        
+                        text = text.replace(regex, (match) => {
+                            return `<mark class="bg-danger text-white" 
+                                     style="cursor: pointer; text-decoration: underline;" 
+                                     title="Sửa thành: ${correction}\nLý do: ${reason}">${match}</mark>`;
+                        });
+                    }
+                });
+                
+                essayText.innerHTML = text;
+            }
+            </text>
+        }
+    </script>
+}
+

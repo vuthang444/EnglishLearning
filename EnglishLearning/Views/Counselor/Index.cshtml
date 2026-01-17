@@ -1,0 +1,48 @@
+@{
+    ViewData["Title"] = "AI Tư vấn lộ trình";
+    var speaking = ViewBag.SpeakingScore as int? ?? 0;
+    var writing = ViewBag.WritingScore as int? ?? 0;
+    var rec = ViewBag.Recommendation as string;
+}
+<div class="container py-4">
+    <h2 class="mb-2"><i class="bi bi-robot"></i> AI Tư vấn lộ trình</h2>
+    <p class="text-muted">Dựa trên kết quả làm bài (Speaking, Writing) và mục tiêu của bạn, AI đề xuất khóa học phù hợp.</p>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Hồ sơ năng lực (từ bài đã làm)</h5>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Điểm Speaking (trung bình)</label>
+                    <input type="text" class="form-control" value="@speaking/100" readonly />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Điểm Writing (trung bình)</label>
+                    <input type="text" class="form-control" value="@writing/100" readonly />
+                </div>
+            </div>
+            <form method="post" action="/Counselor/Index">
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <label class="form-label">Mục tiêu của bạn</label>
+                    <input type="text" class="form-control" name="userGoal" placeholder="VD: thi IELTS, đi làm văn phòng, du lịch..." value="@(ViewBag.UserGoal ?? "")" />
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-stars"></i> Lấy tư vấn AI</button>
+            </form>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(rec))
+    {
+        <div class="card shadow-sm border-primary">
+            <div class="card-header bg-primary text-white"><i class="bi bi-chat-quote"></i> Gợi ý của AI</div>
+            <div class="card-body">
+                <div class="whitespace-pre-wrap">@rec</div>
+            </div>
+        </div>
+    }
+</div>
+<style>
+.whitespace-pre-wrap { white-space: pre-wrap; }
+</style>
+

@@ -1,6 +1,6 @@
 @model List<CommonLib.Entities.Lesson>
 @{
-    ViewData["Title"] = "Bài tập Listening";
+    ViewData["Title"] = "Bài tập Reading";
     var submissions = ViewBag.Submissions as Dictionary<int, CommonLib.Entities.Submission> ?? new Dictionary<int, CommonLib.Entities.Submission>();
     var exerciseCounts = ViewBag.LessonExerciseCounts as Dictionary<int, int> ?? new Dictionary<int, int>();
 }
@@ -8,8 +8,10 @@
 <div class="container mt-4">
     <div class="row mb-4">
         <div class="col-12">
-            <h2 class="mb-2">Bài tập Listening</h2>
-            <p class="text-muted">Luyện tập kỹ năng nghe tiếng Anh với các bài tập đa dạng</p>
+            <h2 class="mb-2">
+                <i class="bi bi-book"></i> Bài tập Reading
+            </h2>
+            <p class="text-muted">Luyện tập kỹ năng đọc hiểu tiếng Anh với các bài tập đa dạng</p>
         </div>
     </div>
 
@@ -24,7 +26,7 @@
     @if (Model == null || !Model.Any())
     {
         <div class="alert alert-info">
-            <i class="bi bi-info-circle"></i> Hiện chưa có bài tập Listening nào. Vui lòng quay lại sau!
+            <i class="bi bi-info-circle"></i> Chưa có bài tập nào.
         </div>
     }
     else
@@ -57,11 +59,11 @@
                                 <small class="text-muted">
                                     <i class="bi bi-list-ol"></i> @exerciseCount câu hỏi
                                 </small>
-                                @if (lesson.PlayLimit.HasValue && lesson.PlayLimit > 0)
+                                @if (!string.IsNullOrEmpty(lesson.ReadingLevel))
                                 {
                                     <br>
                                     <small class="text-muted">
-                                        <i class="bi bi-headphones"></i> Giới hạn: @lesson.PlayLimit lần nghe
+                                        <i class="bi bi-bar-chart"></i> Cấp độ: @lesson.ReadingLevel
                                     </small>
                                 }
                             </div>
@@ -93,17 +95,17 @@
                             @if (submission != null)
                             {
                                 <div class="d-grid gap-2">
-                                    <a href="/Listening/Exercise/@lesson.Id" class="btn btn-primary">
+                                    <a href="/Reading/Exercise/@lesson.Id" class="btn btn-primary">
                                         <i class="bi bi-arrow-repeat"></i> Làm lại
                                     </a>
-                                    <a href="/Listening/Result/@submission.Id" class="btn btn-outline-secondary btn-sm">
+                                    <a href="/Reading/Result/@submission.Id" class="btn btn-outline-secondary btn-sm">
                                         <i class="bi bi-eye"></i> Xem kết quả
                                     </a>
                                 </div>
                             }
                             else
                             {
-                                <a href="/Listening/Exercise/@lesson.Id" class="btn btn-primary w-100">
+                                <a href="/Reading/Exercise/@lesson.Id" class="btn btn-primary w-100">
                                     <i class="bi bi-play-circle"></i> Bắt đầu làm bài
                                 </a>
                             }

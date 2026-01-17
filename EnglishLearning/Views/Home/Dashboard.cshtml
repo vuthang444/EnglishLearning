@@ -341,24 +341,9 @@
                             </div>
                         </div>
                         <div>
-                            @if (lesson.Skill?.Name == "Reading")
-                            {
-                                <a href="@Url.Action("Exercise", "Reading", new { lessonId = lesson.Id })" class="btn-continue">
-                                    Tiếp tục học →
-                                </a>
-                            }
-                            else if (lesson.Skill?.Name == "Listening")
-                            {
-                                <a href="@Url.Action("Exercise", "Listening", new { lessonId = lesson.Id })" class="btn-continue">
-                                    Tiếp tục học →
-                                </a>
-                            }
-                            else
-                            {
-                                <a href="@Url.Action("Exercise", "Reading", new { lessonId = lesson.Id })" class="btn-continue">
-                                    Tiếp tục học →
-                                </a>
-                            }
+                            <a href="@Url.Action("Exercise", "Reading", new { lessonId = lesson.Id })" class="btn-continue">
+                                Tiếp tục học →
+                            </a>
                         </div>
                     </div>
                 }

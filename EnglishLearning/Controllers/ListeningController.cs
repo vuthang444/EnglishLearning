@@ -31,7 +31,7 @@ namespace EnglishLearning.Controllers
             _logger = logger;
         }
 
-        // Hiển thị danh sách bài nghe
+        // Hiển thị danh sách bài tập Listening
         [HttpGet]
         [Route("Listening")]
         [Route("Listening/Index")]
@@ -47,13 +47,30 @@ namespace EnglishLearning.Controllers
             var lessons = await _lessonRepository.GetBySkillIdAsync(listeningSkill.Id);
             var activeLessons = lessons.Where(l => l.IsActive).OrderBy(l => l.Order).ToList();
 
-            // Lấy userId để kiểm tra submission
+            // Lấy số lượng câu hỏi cho mỗi bài học
+            var lessonExerciseCounts = new Dictionary<int, int>();
+            foreach (var lesson in activeLessons)
+            {
+                var exercises = await _exerciseRepository.GetByLessonIdAsync(lesson.Id);
+                lessonExerciseCounts[lesson.Id] = exercises?.Count ?? 0;
+            }
+            ViewBag.LessonExerciseCounts = lessonExerciseCounts;
+
+            // Lấy thông tin submission của user
+            var submissions = new Dictionary<int, Submission>();
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out int userId))
             {
-                var userSubmissions = await _submissionRepository.GetByUserIdAsync(userId) ?? new List<Submission>();
-                ViewBag.UserSubmissions = userSubmissions;
+                foreach (var lesson in activeLessons)
+                {
+                    var submission = await _submissionRepository.GetByUserAndLessonAsync(userId, lesson.Id);
+                    if (submission != null)
+                    {
+                        submissions[lesson.Id] = submission;
+                    }
+                }
             }
+            ViewBag.Submissions = submissions;
 
             return View("~/Views/Listening/Index.cshtml", activeLessons);
         }

@@ -1,0 +1,171 @@
+@model CommonLib.DTOs.SpeakingPassageDto
+
+@{
+    ViewData["Title"] = "Tạo bài nói mới";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var difficultyLevels = ViewBag.DifficultyLevels as List<string> ?? new List<string> { "A1", "A2", "B1", "B2", "C1", "C2" };
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2>Tạo bài nói mới</h2>
+            <hr />
+
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5>Thông tin cơ bản</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label asp-for="Title" class="form-label">Tiêu đề <span class="text-danger">*</span></label>
+                                    <input asp-for="Title" class="form-control" required />
+                                    <span asp-validation-for="Title" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Description" class="form-label">Mô tả</label>
+                                    <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                                    <span asp-validation-for="Description" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Topic" class="form-label">Chủ đề <span class="text-danger">*</span></label>
+                                    <input asp-for="Topic" class="form-control" required placeholder="Ví dụ: My favorite hobby, Daily routine, etc." />
+                                    <span asp-validation-for="Topic" class="text-danger"></span>
+                                    <small class="form-text text-muted">Nhập chủ đề và nhấn nút "Tạo tự động" để AI tạo nội dung</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <button type="button" class="btn btn-info" id="btnGenerateContent">
+                                        <i class="bi bi-magic"></i> Tạo nội dung tự động bằng AI
+                                    </button>
+                                    <span id="generatingStatus" class="ms-2 text-muted" style="display: none;">
+                                        <i class="bi bi-hourglass-split"></i> Đang tạo nội dung...
+                                    </span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="ReferenceText" class="form-label">Văn bản mẫu (Reference Text)</label>
+                                    <textarea asp-for="ReferenceText" class="form-control" rows="8" placeholder="Đoạn văn mẫu để học viên luyện nói..."></textarea>
+                                    <span asp-validation-for="ReferenceText" class="text-danger"></span>
+                                    <small class="form-text text-muted">Văn bản mẫu sẽ được dùng để so sánh với bài nói của học viên</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5>Cấu hình</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label asp-for="DifficultyLevel" class="form-label">Cấp độ</label>
+                                    <select asp-for="DifficultyLevel" class="form-select">
+                                        @foreach (var level in difficultyLevels)
+                                        {
+                                            <option value="@level">@level</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="DifficultyLevel" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="TimeLimitSeconds" class="form-label">Thời gian giới hạn (giây)</label>
+                                    <input asp-for="TimeLimitSeconds" class="form-control" type="number" min="10" max="300" />
+                                    <span asp-validation-for="TimeLimitSeconds" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Level" class="form-label">Cấp độ hệ thống</label>
+                                    <select asp-for="Level" class="form-select">
+                                        <option value="1">Cơ bản</option>
+                                        <option value="2">Trung bình</option>
+                                        <option value="3">Nâng cao</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Order" class="form-label">Thứ tự</label>
+                                    <input asp-for="Order" class="form-control" type="number" />
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input asp-for="IsActive" class="form-check-input" type="checkbox" checked />
+                                        <label asp-for="IsActive" class="form-check-label">Kích hoạt</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Lưu bài nói
+                    </button>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('btnGenerateContent').addEventListener('click', async function() {
+            const topic = document.getElementById('Topic').value;
+            const level = document.getElementById('DifficultyLevel').value;
+            const statusEl = document.getElementById('generatingStatus');
+            const btn = this;
+
+            if (!topic.trim()) {
+                alert('Vui lòng nhập chủ đề trước!');
+                return;
+            }
+
+            btn.disabled = true;
+            statusEl.style.display = 'inline';
+
+            try {
+                const response = await fetch('/Admin/Speaking/GenerateContent', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify({ topic: topic, level: level })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('Title').value = data.title || '';
+                    document.getElementById('ReferenceText').value = data.passage || '';
+                    alert('Đã tạo nội dung tự động thành công!');
+                } else {
+                    alert('Lỗi: ' + (data.message || 'Không thể tạo nội dung'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Đã xảy ra lỗi khi tạo nội dung. Vui lòng thử lại.');
+            } finally {
+                btn.disabled = false;
+                statusEl.style.display = 'none';
+            }
+        });
+    </script>
+}
+
+
+
+
+

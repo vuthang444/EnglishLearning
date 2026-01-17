@@ -1,0 +1,44 @@
+@model CommonLib.Entities.Course
+@{
+    ViewData["Title"] = Model?.Title ?? "Chi tiết";
+    var already = ViewBag.AlreadyPurchased as bool? ?? false;
+}
+<div class="container py-4">
+    @if (Model == null)
+    {
+        <p>Không tìm thấy.</p>
+    }
+    else
+    {
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">@TempData["ErrorMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+    <h2>@Model.Title</h2>
+    <p class="text-muted">@Model.Topic · @Model.Level</p>
+    @if (!string.IsNullOrEmpty(Model.TargetAudience)) { <p><strong>Đối tượng:</strong> @Model.TargetAudience</p> }
+    @if (!string.IsNullOrEmpty(Model.MarketingCopy)) { <div class="mb-3">@Html.Raw(Model.MarketingCopy?.Replace("\n", "<br/>"))</div> }
+    <p class="h4 text-primary">@Model.PriceUSD.ToString("N0") USD</p>
+    @if (already)
+    {
+        <p class="text-success">Bạn đã sở hữu khóa học này.</p>
+        <a href="/Courses/MyCourses" class="btn btn-outline-primary">Khóa học của tôi</a>
+    }
+    else
+    {
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <form method="post" action="/Courses/Checkout/@Model.Id" class="d-inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-success"><i class="bi bi-wallet2"></i> Mua ngay (MoMo)</button>
+            </form>
+        }
+        else
+        {
+            <p class="text-warning">Vui lòng <a href="/Auth/Login">đăng nhập</a> để mua khóa học.</p>
+        }
+    }
+    <a href="/Courses" class="btn btn-secondary ms-2">Quay lại</a>
+    }
+</div>
+

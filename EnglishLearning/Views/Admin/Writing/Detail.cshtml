@@ -1,0 +1,96 @@
+@model CommonLib.Entities.Lesson
+
+@{
+    ViewData["Title"] = "Chi tiết bài viết";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Chi tiết bài viết</h2>
+                <div>
+                    <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-warning">
+                        <i class="bi bi-pencil"></i> Sửa
+                    </a>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">Quay lại</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">@Model.Title</h5>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <div class="mb-3">
+                            <strong>Mô tả:</strong>
+                            <p>@Model.Description</p>
+                        </div>
+                    }
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Chủ đề:</strong> @(Model.WritingTopic ?? "-")
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Cấp độ:</strong> 
+                            <span class="badge bg-info">@(Model.WritingLevel ?? "-")</span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Giới hạn số từ:</strong> @(Model.WordLimit?.ToString() ?? "Không giới hạn")
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Thời gian giới hạn:</strong> @(Model.TimeLimitMinutes?.ToString() ?? "Không giới hạn") phút
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Đề bài Writing Task 2:</strong>
+                        <div class="card bg-light mt-2">
+                            <div class="card-body">
+                                <p class="mb-0">@Html.Raw(Model.WritingPrompt?.Replace("\n", "<br>"))</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.WritingHints))
+                    {
+                        <div class="mb-3">
+                            <strong>Gợi ý phát triển ý tưởng:</strong>
+                            <div class="card bg-info text-white mt-2">
+                                <div class="card-body">
+                                    <p class="mb-0">@Html.Raw(Model.WritingHints.Replace("\n", "<br>"))</p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <strong>Trạng thái:</strong>
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge bg-success">Hoạt động</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Tạm dừng</span>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Ngày tạo:</strong> @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+

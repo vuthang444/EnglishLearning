@@ -16,6 +16,8 @@ namespace DataServiceLib.Data
         public DbSet<Exercise> Exercises { get; set; }
         public DbSet<Answer> Answers { get; set; }
         public DbSet<Submission> Submissions { get; set; }
+        public DbSet<Course> Courses { get; set; }
+        public DbSet<Order> Orders { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -61,6 +63,14 @@ namespace DataServiceLib.Data
                 entity.Property(e => e.ReadingLevel).HasMaxLength(10);
                 entity.Property(e => e.AudioUrl).HasMaxLength(1000);
                 entity.Property(e => e.Transcript).HasMaxLength(20000);
+                entity.Property(e => e.Topic).HasMaxLength(500);
+                entity.Property(e => e.ReferenceText).HasMaxLength(10000);
+                entity.Property(e => e.SpeakingLevel).HasMaxLength(10);
+                // Writing fields
+                entity.Property(e => e.WritingTopic).HasMaxLength(500);
+                entity.Property(e => e.WritingPrompt).HasMaxLength(5000);
+                entity.Property(e => e.WritingHints).HasMaxLength(5000);
+                entity.Property(e => e.WritingLevel).HasMaxLength(10);
                 entity.HasOne(e => e.Skill)
                       .WithMany(s => s.Lessons)
                       .HasForeignKey(e => e.SkillId)
@@ -88,6 +98,33 @@ namespace DataServiceLib.Data
                       .WithMany(ex => ex.Answers)
                       .HasForeignKey(e => e.ExerciseId)
                       .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Cấu hình Course
+            modelBuilder.Entity<Course>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(300);
+                entity.Property(e => e.Topic).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.Level).HasMaxLength(20);
+                entity.Property(e => e.Syllabus).HasMaxLength(10000);
+                entity.Property(e => e.TargetAudience).HasMaxLength(2000);
+                entity.Property(e => e.MarketingCopy).HasMaxLength(5000);
+                entity.Property(e => e.PriceUSD).HasPrecision(10, 2);
+            });
+
+            // Cấu hình Order
+            modelBuilder.Entity<Order>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Status).HasMaxLength(20);
+                entity.Property(e => e.MomoOrderId).HasMaxLength(50);
+                entity.Property(e => e.MomoRequestId).HasMaxLength(50);
+                entity.Property(e => e.MomoTransId).HasMaxLength(50);
+                entity.Property(e => e.MomoMessage).HasMaxLength(500);
+                entity.Property(e => e.Amount).HasPrecision(18, 0);
+                entity.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(e => e.Course).WithMany().HasForeignKey(e => e.CourseId).OnDelete(DeleteBehavior.Restrict);
             });
 
             // Cấu hình Submission

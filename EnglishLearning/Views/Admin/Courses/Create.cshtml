@@ -1,0 +1,91 @@
+@{
+    ViewData["Title"] = "AI Thiết kế khóa học";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+<div class="main-content">
+    <h2 class="mb-3">AI Thiết kế khóa học (Course Creator)</h2>
+    <p class="text-muted">Nhập chủ đề và trình độ, AI sẽ đề xuất lộ trình, giá và nội dung quảng cáo.</p>
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">@TempData["ErrorMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+    <form id="frmCreate" method="post" action="/Admin/Courses/Create" class="needs-validation">
+        @Html.AntiForgeryToken()
+        <div class="row mb-3">
+            <div class="col-md-5">
+                <label class="form-label">Chủ đề <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="Topic" id="Topic" required placeholder="VD: Business English, IELTS Writing" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Trình độ</label>
+                <select class="form-select" name="Level" id="Level">
+                    <option value="A1">A1</option>
+                    <option value="A2">A2</option>
+                    <option value="B1">B1</option>
+                    <option value="B2" selected>B2</option>
+                    <option value="C1">C1</option>
+                    <option value="C2">C2</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="button" id="btnAi" class="btn btn-outline-primary"><i class="bi bi-stars"></i> AI thiết kế</button>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Tiêu đề khóa học <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="Title" id="Title" required placeholder="Sẽ được điền bởi AI hoặc nhập tay" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Syllabus (JSON: modules, lessons)</label>
+            <textarea class="form-control font-monospace" name="Syllabus" id="Syllabus" rows="4" placeholder="Sẽ được điền bởi AI"></textarea>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Target Audience</label>
+            <textarea class="form-control" name="TargetAudience" id="TargetAudience" rows="2" placeholder="Sẽ được điền bởi AI"></textarea>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Marketing Copy (khoảng 200 từ)</label>
+            <textarea class="form-control" name="MarketingCopy" id="MarketingCopy" rows="5" placeholder="Sẽ được điền bởi AI"></textarea>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Giá (USD)</label>
+            <input type="number" class="form-control" name="PriceUSD" id="PriceUSD" step="0.01" min="0" value="0" />
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Lưu khóa học</button>
+            <a href="/Admin/Courses" class="btn btn-secondary">Hủy</a>
+        </div>
+    </form>
+</div>
+<script>
+document.getElementById('btnAi').addEventListener('click', async function(){
+    var topic = document.getElementById('Topic').value.trim();
+    if (!topic) { alert('Vui lòng nhập Chủ đề.'); return; }
+    var level = document.getElementById('Level').value || 'B2';
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang tạo...';
+    try {
+        var res = await fetch('/Admin/Courses/GenerateDesign', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ Topic: topic, Level: level })
+        });
+        var json = await res.json();
+        if (json.success && json.data) {
+            var d = json.data;
+            document.getElementById('Title').value = d.courseTitle || '';
+            document.getElementById('Syllabus').value = typeof d.syllabus === 'string' ? d.syllabus : JSON.stringify(d.syllabus || {}, null, 2);
+            document.getElementById('TargetAudience').value = d.targetAudience || '';
+            document.getElementById('MarketingCopy').value = d.marketingCopy || '';
+            document.getElementById('PriceUSD').value = d.pricingSuggestion != null ? d.pricingSuggestion : 0;
+        } else {
+            alert(json.message || 'Không thể tạo thiết kế.');
+        }
+    } catch (e) {
+        alert('Lỗi: ' + e.message);
+    }
+    this.disabled = false;
+    this.innerHTML = '<i class="bi bi-stars"></i> AI thiết kế';
+});
+</script>
+

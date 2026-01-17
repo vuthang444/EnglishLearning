@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using CommonLib.Interfaces;
-using CommonLib.Entities;
 using System.Security.Claims;
 
 namespace EnglishLearning.Controllers
@@ -14,20 +13,17 @@ namespace EnglishLearning.Controllers
 		private readonly ILessonRepository _lessonRepository;
 		private readonly ISubmissionRepository _submissionRepository;
 		private readonly IUserRepository _userRepository;
-		private readonly ISkillRepository _skillRepository;
 
 		public HomeController(
 			ILogger<HomeController> logger,
 			ILessonRepository lessonRepository,
 			ISubmissionRepository submissionRepository,
-			IUserRepository userRepository,
-			ISkillRepository skillRepository)
+			IUserRepository userRepository)
 		{
 			_logger = logger;
 			_lessonRepository = lessonRepository;
 			_submissionRepository = submissionRepository;
 			_userRepository = userRepository;
-			_skillRepository = skillRepository;
 		}
 
 		public IActionResult Index()
@@ -82,23 +78,9 @@ namespace EnglishLearning.Controllers
 			// Lấy tất cả lessons
 			var allLessons = await _lessonRepository.GetAllAsync();
 			
-			// Lấy bài học gần nhất (ưu tiên Reading, sau đó Listening)
-			var readingSkill = await _skillRepository.GetByNameAsync("Reading");
-			var listeningSkill = await _skillRepository.GetByNameAsync("Listening");
-			
-			Lesson? latestLesson = null;
-			if (readingSkill != null)
-			{
-				var readingLessons = allLessons.Where(l => l.SkillId == readingSkill.Id && l.IsActive).OrderBy(l => l.Order).ToList();
-				latestLesson = readingLessons.FirstOrDefault();
-			}
-			
-			// Nếu không có Reading, lấy Listening
-			if (latestLesson == null && listeningSkill != null)
-			{
-				var listeningLessons = allLessons.Where(l => l.SkillId == listeningSkill.Id && l.IsActive).OrderBy(l => l.Order).ToList();
-				latestLesson = listeningLessons.FirstOrDefault();
-			}
+			// Lấy bài học gần nhất (Reading skill - skillId = 3)
+			var readingLessons = allLessons.Where(l => l.SkillId == 3).OrderBy(l => l.Order).ToList();
+			var latestLesson = readingLessons.FirstOrDefault();
 
 			// Lấy submissions của user
 			var userSubmissions = await _submissionRepository.GetByUserIdAsync(userId) ?? new List<CommonLib.Entities.Submission>();

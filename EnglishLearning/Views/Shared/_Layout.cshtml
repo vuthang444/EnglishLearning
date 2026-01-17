@@ -150,10 +150,15 @@
                                     Khóa học
                                 </a>
                                 <ul class="dropdown-menu" aria-labelledby="coursesDropdown">
-                                    <li><a class="dropdown-item" asp-controller="Listening" asp-action="Index">Listening</a></li>
-                                    <li><a class="dropdown-item" href="#">Speaking</a></li>
-                                    <li><a class="dropdown-item" asp-controller="Reading" asp-action="Exercise" asp-route-lessonId="1">Reading</a></li>
-                                    <li><a class="dropdown-item" href="#">Writing</a></li>
+                                    <li><a class="dropdown-item" href="/Listening">Listening</a></li>
+                                    <li><a class="dropdown-item" href="/Speaking">Speaking</a></li>
+                                    <li><a class="dropdown-item" href="/Reading">Reading</a></li>
+                                    <li><a class="dropdown-item" href="/Writing">Writing</a></li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li><a class="dropdown-item" href="/Courses"><i class="bi bi-shop"></i> Danh sách khóa học</a></li>
+                                    <li><a class="dropdown-item" href="/Courses/MyCourses"><i class="bi bi-collection"></i> Khóa học của tôi</a></li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li><a class="dropdown-item" href="/Counselor"><i class="bi bi-robot"></i> AI Tư vấn lộ trình</a></li>
                                 </ul>
                             </li>
                             <li class="nav-item">

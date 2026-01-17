@@ -98,8 +98,8 @@
                 <i class="bi bi-earbuds"></i> Listening
             </a>
             
-            <a class="nav-link" 
-               asp-controller="Lessons" asp-action="Index" asp-route-skillId="2">
+            <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Speaking" ? "active" : "")" 
+               href="/Admin/Speaking">
                 <i class="bi bi-mic"></i> Speaking
             </a>
             
@@ -108,9 +108,15 @@
                 <i class="bi bi-book"></i> Reading
             </a>
             
-            <a class="nav-link" 
-               asp-controller="Lessons" asp-action="Index" asp-route-skillId="4">
+            <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Writing" ? "active" : "")" 
+               href="/Admin/Writing">
                 <i class="bi bi-pencil"></i> Writing
+            </a>
+            
+            <div class="nav-divider">AI</div>
+            <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Courses" ? "active" : "")" 
+               href="/Admin/Courses">
+                <i class="bi bi-stars"></i> AI Thiết kế khóa học
             </a>
             
             <form asp-controller="Auth" asp-action="Logout" method="post" class="px-3 mt-3">

@@ -2,7 +2,178 @@
     ViewData["Title"] = "Thông tin";
 }
 
-<div class="container">
-    <h1>@ViewData["Title"]</h1>
-    <p>Trang thông tin về hệ thống học tiếng Anh EnglishLearning.</p>
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="display-5 fw-bold text-primary mb-3">@ViewData["Title"]</h1>
+            <p class="lead text-muted">Hệ thống học tiếng Anh trực tuyến EnglishLearning</p>
+        </div>
+    </div>
+
+    <!-- Giới thiệu -->
+    <section class="mb-5">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h2 class="h4 mb-3">
+                    <i class="bi bi-info-circle text-primary me-2"></i>Giới thiệu EnglishLearning
+                </h2>
+                <p class="mb-0">
+                    EnglishLearning là nền tảng học tiếng Anh trực tuyến, giúp bạn rèn luyện toàn diện bốn kỹ năng: 
+                    <strong>Nghe (Listening)</strong>, <strong>Đọc (Reading)</strong>, <strong>Nói (Speaking)</strong> và 
+                    <strong>Viết (Writing)</strong>. Hệ thống tích hợp AI để chấm điểm và đưa ra gợi ý cải thiện, 
+                    phù hợp với nhiều cấp độ từ cơ bản đến nâng cao.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Các kỹ năng -->
+    <section class="mb-5">
+        <h2 class="h4 mb-3">
+            <i class="bi bi-book-half text-primary me-2"></i>Các kỹ năng
+        </h2>
+        <div class="row g-3">
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="mb-2"><i class="bi bi-headphones display-6 text-primary"></i></div>
+                        <h5 class="card-title">Listening</h5>
+                        <p class="card-text small text-muted">Luyện nghe qua bài audio, trả lời câu hỏi và xem transcript.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="mb-2"><i class="bi bi-book display-6 text-success"></i></div>
+                        <h5 class="card-title">Reading</h5>
+                        <p class="card-text small text-muted">Đọc hiểu văn bản và trả lời câu hỏi trắc nghiệm.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="mb-2"><i class="bi bi-mic display-6 text-warning"></i></div>
+                        <h5 class="card-title">Speaking</h5>
+                        <p class="card-text small text-muted">Thu âm theo đề bài, AI chấm phát âm và độ trôi chảy.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="mb-2"><i class="bi bi-pencil-square display-6 text-info"></i></div>
+                        <h5 class="card-title">Writing</h5>
+                        <p class="card-text small text-muted">Viết bài theo đề IELTS, AI chấm ngữ pháp và từ vựng.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tính năng nổi bật -->
+    <section class="mb-5">
+        <div class="card border-0 shadow-sm bg-light">
+            <div class="card-body p-4">
+                <h2 class="h4 mb-3">
+                    <i class="bi bi-stars text-primary me-2"></i>Tính năng nổi bật
+                </h2>
+                <ul class="mb-0">
+                    <li><strong>Chấm điểm bằng AI:</strong> Speaking và Writing được đánh giá tự động theo tiêu chí rõ ràng.</li>
+                    <li><strong>Đa cấp độ:</strong> Bài tập từ A1–C2, phù hợp mọi trình độ.</li>
+                    <li><strong>Theo dõi tiến độ:</strong> Lịch sử làm bài, điểm số và thời gian học trên Dashboard.</li>
+                    <li><strong>Giao diện thân thiện:</strong> Dễ sử dụng trên máy tính và thiết bị di động.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Hướng dẫn sử dụng -->
+    <section class="mb-5">
+        <h2 class="h4 mb-3">
+            <i class="bi bi-question-circle text-primary me-2"></i>Hướng dẫn sử dụng
+        </h2>
+        <div class="accordion" id="accordionGuide">
+            <div class="accordion-item">
+                <h3 class="accordion-header">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                        Bắt đầu học như thế nào?
+                    </button>
+                </h3>
+                <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#accordionGuide">
+                    <div class="accordion-body">
+                        Đăng nhập và chọn <strong>Bắt đầu học</strong> hoặc mục <strong>Khóa học</strong> để chọn kỹ năng. 
+                        Mỗi kỹ năng có danh sách bài tập; nhấn <strong>Bắt đầu làm bài</strong> để bắt đầu.
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h3 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                        Làm sao xem kết quả và tiến độ?
+                    </button>
+                </h3>
+                <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionGuide">
+                    <div class="accordion-body">
+                        Sau khi nộp bài, bạn xem điểm và đáp án tại trang <strong>Kết quả</strong>. 
+                        Tổng quan tiến độ, bài đã làm và thời gian học nằm ở <strong>Dashboard</strong> (Bắt đầu học).
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h3 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                        Có thể làm lại bài đã làm không?
+                    </button>
+                </h3>
+                <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#accordionGuide">
+                    <div class="accordion-body">
+                        Có. Trên danh sách bài tập, các bài đã làm sẽ có nút <strong>Làm lại</strong> và <strong>Xem kết quả</strong> 
+                        để bạn ôn tập hoặc xem lại đáp án.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Chính sách bảo mật & Dữ liệu -->
+    <section class="mb-5">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h2 class="h4 mb-3">
+                    <i class="bi bi-shield-lock text-primary me-2"></i>Chính sách bảo mật & Dữ liệu
+                </h2>
+                <p class="mb-2">
+                    Chúng tôi bảo vệ thông tin cá nhân và dữ liệu học tập của bạn. Các nội dung bạn nộp (bài viết, bản ghi âm) 
+                    có thể được gửi tới dịch vụ AI (OpenAI) để chấm điểm; dữ liệu không được dùng cho mục đích khác ngoài phục vụ 
+                    bài tập của bạn.
+                </p>
+                <p class="mb-0">
+                    Mật khẩu được mã hóa. Bạn nên đăng xuất khi dùng máy chung và không chia sẻ tài khoản.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Liên hệ -->
+    <section>
+        <div class="card border-0 shadow-sm bg-primary bg-opacity-10">
+            <div class="card-body p-4 text-center">
+                <h2 class="h4 mb-3">
+                    <i class="bi bi-envelope text-primary me-2"></i>Liên hệ & Hỗ trợ
+                </h2>
+                <p class="mb-0">
+                    Nếu bạn cần hỗ trợ hoặc góp ý, vui lòng liên hệ quản trị viên qua trang <strong>Quản trị</strong> (dành cho Admin) 
+                    hoặc qua kênh liên lạc nội bộ của đơn vị tổ chức.
+                </p>
+            </div>
+        </div>
+    </section>
 </div>
+
+<style>
+    .card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.1) !important; }
+    .accordion-button:not(.collapsed) { background-color: rgba(74, 144, 226, 0.1); color: #1E3A5F; }
+</style>

@@ -1,0 +1,21 @@
+@model EnglishLearning.Models.PaymentResultVm
+@{
+    ViewData["Title"] = Model?.Success == true ? "Thanh toán thành công" : "Thanh toán thất bại";
+}
+<div class="container py-4 text-center">
+    @if (Model != null && Model.Success)
+    {
+        <p class="text-success fs-4"><i class="bi bi-check-circle"></i> @Model.Message</p>
+        @if (Model.Order?.Course != null)
+        {
+            <p class="text-muted">Khóa học: <strong>@Model.Order.Course.Title</strong></p>
+        }
+        <a href="/Courses/MyCourses" class="btn btn-primary">Xem khóa học của tôi</a>
+    }
+    else
+    {
+        <p class="text-danger fs-4"><i class="bi bi-x-circle"></i> @(Model?.Message ?? "Có lỗi xảy ra.")</p>
+        <a href="/Courses" class="btn btn-secondary">Quay lại danh sách khóa học</a>
+    }
+</div>
+

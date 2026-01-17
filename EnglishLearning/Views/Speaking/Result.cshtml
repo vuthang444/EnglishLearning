@@ -1,0 +1,303 @@
+@model CommonLib.Entities.Submission
+
+@{
+    ViewData["Title"] = "Kết quả Speaking";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var lesson = ViewBag.Lesson as CommonLib.Entities.Lesson;
+    var evaluation = ViewBag.Evaluation as Dictionary<string, object> ?? new Dictionary<string, object>();
+    
+    // Helper function to safely get double value from evaluation
+    double GetDoubleValue(string key)
+    {
+        if (!evaluation.ContainsKey(key)) return 0;
+        var value = evaluation[key];
+        if (value is System.Text.Json.JsonElement jsonElement)
+        {
+            if (jsonElement.ValueKind == System.Text.Json.JsonValueKind.Number)
+                return jsonElement.GetDouble();
+            if (jsonElement.ValueKind == System.Text.Json.JsonValueKind.String)
+            {
+                if (double.TryParse(jsonElement.GetString(), out var doubleVal))
+                    return doubleVal;
+                return 0;
+            }
+        }
+        if (value is double doubleValue) return doubleValue;
+        if (value is int intValue) return intValue;
+        if (value is string strValue && double.TryParse(strValue, out var parsedDouble))
+            return parsedDouble;
+        return 0;
+    }
+    
+    // Helper function to safely get int value from evaluation
+    int GetIntValue(string key)
+    {
+        if (!evaluation.ContainsKey(key)) return 0;
+        var value = evaluation[key];
+        if (value is System.Text.Json.JsonElement jsonElement)
+        {
+            if (jsonElement.ValueKind == System.Text.Json.JsonValueKind.Number)
+                return jsonElement.GetInt32();
+            if (jsonElement.ValueKind == System.Text.Json.JsonValueKind.String)
+            {
+                if (int.TryParse(jsonElement.GetString(), out var intVal))
+                    return intVal;
+                return 0;
+            }
+        }
+        if (value is int intValue) return intValue;
+        if (value is double doubleValue) return (int)doubleValue;
+        if (value is string strValue && int.TryParse(strValue, out var parsedInt))
+            return parsedInt;
+        return 0;
+    }
+    
+    // Helper function to safely get string value from evaluation
+    string GetStringValue(string key)
+    {
+        if (!evaluation.ContainsKey(key)) return "";
+        var value = evaluation[key];
+        if (value is System.Text.Json.JsonElement jsonElement)
+        {
+            if (jsonElement.ValueKind == System.Text.Json.JsonValueKind.String)
+                return jsonElement.GetString() ?? "";
+            return jsonElement.ToString();
+        }
+        return value?.ToString() ?? "";
+    }
+}
+
+<div class="container my-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-check-circle"></i> Kết quả bài nói
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @if (lesson != null)
+                    {
+                        <div class="mb-4">
+                            <h5>@lesson.Title</h5>
+                            @if (!string.IsNullOrEmpty(lesson.Topic))
+                            {
+                                <p class="text-muted">Chủ đề: @lesson.Topic</p>
+                            }
+                        </div>
+                    }
+
+                    <!-- Score Summary -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card text-center bg-light">
+                                <div class="card-body">
+                                    <h6 class="text-muted">Điểm tổng</h6>
+                                    <h2 class="text-primary mb-0">@Model.Score/@Model.MaxScore</h2>
+                                    <div class="progress mt-2" style="height: 10px;">
+                                        <div class="progress-bar @(Model.Score >= 80 ? "bg-success" : Model.Score >= 60 ? "bg-warning" : "bg-danger")" 
+                                             style="width: @Model.Score%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card text-center bg-light">
+                                <div class="card-body">
+                                    <h6 class="text-muted">Độ chính xác</h6>
+                                    @{
+                                        var accuracy = GetDoubleValue("accuracy");
+                                    }
+                                    @if (accuracy > 0)
+                                    {
+                                        <h2 class="text-info mb-0">@accuracy.ToString("F1")%</h2>
+                                    }
+                                    else
+                                    {
+                                        <h2 class="text-muted mb-0">-</h2>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card text-center bg-light">
+                                <div class="card-body">
+                                    <h6 class="text-muted">Độ trôi chảy</h6>
+                                    @{
+                                        var fluency = GetDoubleValue("fluency");
+                                    }
+                                    @if (fluency > 0)
+                                    {
+                                        <h2 class="text-success mb-0">@fluency.ToString("F1")%</h2>
+                                    }
+                                    else
+                                    {
+                                        <h2 class="text-muted mb-0">-</h2>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transcription -->
+                    @{
+                        var transcription = GetStringValue("transcription");
+                    }
+                    @if (!string.IsNullOrEmpty(transcription))
+                    {
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">Bản ghi âm của bạn</h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-0" id="transcriptionText">@transcription</p>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Reference Text with Highlighted Words -->
+                    @if (lesson != null && !string.IsNullOrEmpty(lesson.ReferenceText))
+                    {
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">Văn bản mẫu</h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-0" id="referenceText">@Html.Raw(lesson.ReferenceText.Replace("\n", "<br>"))</p>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Mispronounced Words -->
+                    @if (evaluation.ContainsKey("mispronouncedWords"))
+                    {
+                        var mispronouncedWords = evaluation["mispronouncedWords"];
+                        List<string> words = new List<string>();
+                        if (mispronouncedWords is System.Text.Json.JsonElement jsonElement && jsonElement.ValueKind == System.Text.Json.JsonValueKind.Array)
+                        {
+                            foreach (var item in jsonElement.EnumerateArray())
+                            {
+                                words.Add(item.GetString() ?? "");
+                            }
+                        }
+                        else if (mispronouncedWords is List<string> list)
+                        {
+                            words = list;
+                        }
+
+                        @if (words.Any())
+                        {
+                            <div class="card mb-4 border-warning">
+                                <div class="card-header bg-warning">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-exclamation-triangle"></i> Từ phát âm sai
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach (var word in words)
+                                        {
+                                            <span class="badge bg-danger">@word</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+
+                    <!-- Hesitation Count -->
+                    @{
+                        var hesitationCount = GetIntValue("hesitationCount");
+                    }
+                    @if (hesitationCount > 0)
+                    {
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> Số lần ngập ngừng: <strong>@hesitationCount</strong>
+                        </div>
+                    }
+
+                    <!-- Feedback -->
+                    @{
+                        var feedback = GetStringValue("feedback");
+                    }
+                    @if (!string.IsNullOrEmpty(feedback))
+                    {
+                        <div class="card mb-4 border-info">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-chat-dots"></i> Phản hồi từ AI
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-0">@feedback</p>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Actions -->
+                    <div class="d-flex gap-2">
+                        <a href="@Url.Action("Exercise", new { lessonId = lesson?.Id })" class="btn btn-primary">
+                            <i class="bi bi-arrow-repeat"></i> Làm lại
+                        </a>
+                        <a href="@Url.Action("Index")" class="btn btn-secondary">
+                            <i class="bi bi-list"></i> Danh sách bài tập
+                        </a>
+                    </div>
+
+                    <!-- Submission Info -->
+                    <div class="mt-4 text-muted small">
+                        <p class="mb-0">
+                            <i class="bi bi-clock"></i> Hoàn thành: @Model.CompletedAt?.ToString("dd/MM/yyyy HH:mm:ss")
+                            @if (Model.TimeSpentSeconds > 0)
+                            {
+                                <span class="ms-3">
+                                    <i class="bi bi-hourglass"></i> Thời gian: @Model.TimeSpentSeconds giây
+                                </span>
+                            }
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Highlight mispronounced words in reference text
+        @if (evaluation.ContainsKey("mispronouncedWords") && lesson != null && !string.IsNullOrEmpty(lesson.ReferenceText))
+        {
+            var mispronouncedWords = evaluation["mispronouncedWords"];
+            List<string> words = new List<string>();
+            if (mispronouncedWords is System.Text.Json.JsonElement jsonElement && jsonElement.ValueKind == System.Text.Json.JsonValueKind.Array)
+            {
+                foreach (var item in jsonElement.EnumerateArray())
+                {
+                    words.Add(item.GetString() ?? "");
+                }
+            }
+            else if (mispronouncedWords is List<string> list)
+            {
+                words = list;
+            }
+
+            if (words.Any())
+            {
+                <text>
+                const mispronouncedWords = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(words));
+                const referenceTextEl = document.getElementById('referenceText');
+                if (referenceTextEl) {
+                    let text = referenceTextEl.innerHTML;
+                    mispronouncedWords.forEach(word => {
+                        const regex = new RegExp(`\\b${word}\\b`, 'gi');
+                        text = text.replace(regex, `<mark class="bg-danger text-white">$&</mark>`);
+                    });
+                    referenceTextEl.innerHTML = text;
+                }
+                </text>
+            }
+        }
+    </script>
+}
+

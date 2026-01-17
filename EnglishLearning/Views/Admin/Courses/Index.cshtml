@@ -1,0 +1,46 @@
+@model List<CommonLib.Entities.Course>
+@{
+    ViewData["Title"] = "Quản lý khóa học";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+<div class="main-content">
+    <h2 class="mb-3">Quản lý khóa học</h2>
+    <p class="text-muted">AI hỗ trợ thiết kế khóa học (Course Creator)</p>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">@TempData["ErrorMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+    <div class="mb-3">
+        <a href="/Admin/Courses/Create" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Tạo khóa học bằng AI</a>
+    </div>
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info">Chưa có khóa học nào. Nhấn <strong>Tạo khóa học bằng AI</strong> để bắt đầu.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead><tr><th>ID</th><th>Tiêu đề</th><th>Chủ đề</th><th>Cấp độ</th><th>Giá (USD)</th><th>Trạng thái</th></tr></thead>
+                <tbody>
+                    @foreach (var c in Model)
+                    {
+                        <tr>
+                            <td>@c.Id</td>
+                            <td>@c.Title</td>
+                            <td>@c.Topic</td>
+                            <td>@c.Level</td>
+                            <td>@c.PriceUSD.ToString("N2")</td>
+                            <td>@(c.IsActive ? "Hoạt động" : "Tắt")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+

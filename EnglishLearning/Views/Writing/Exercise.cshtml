@@ -1,0 +1,205 @@
+@{
+    ViewData["Title"] = "Làm bài Writing";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var lesson = ViewBag.Lesson as CommonLib.Entities.Lesson;
+}
+
+@if (lesson == null)
+{
+    <div class="container my-5">
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle"></i> Không tìm thấy bài tập.
+        </div>
+    </div>
+}
+else
+{
+    <div class="container my-5">
+        <div class="row">
+            <!-- Cột trái: Đề bài và gợi ý -->
+            <div class="col-lg-5 mb-4">
+                <div class="card shadow-sm sticky-top" style="top: 20px;">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-file-text"></i> Đề bài
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="text-primary">@lesson.Title</h6>
+                        @if (!string.IsNullOrEmpty(lesson.WritingTopic))
+                        {
+                            <p class="text-muted">
+                                <strong>Chủ đề:</strong> @lesson.WritingTopic
+                            </p>
+                        }
+
+                        <div class="mb-3">
+                            <strong>Writing Task 2:</strong>
+                            <div class="card bg-light mt-2">
+                                <div class="card-body">
+                                    <p class="mb-0">@Html.Raw(lesson.WritingPrompt?.Replace("\n", "<br>"))</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(lesson.WritingHints))
+                        {
+                            <div class="mb-3">
+                                <strong><i class="bi bi-lightbulb"></i> Gợi ý:</strong>
+                                <div class="card bg-info text-white mt-2">
+                                    <div class="card-body">
+                                        <p class="mb-0 small">@Html.Raw(lesson.WritingHints.Replace("\n", "<br>"))</p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <div class="alert alert-warning">
+                            <small>
+                                <i class="bi bi-info-circle"></i> 
+                                <strong>Yêu cầu:</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li>Số từ: @(lesson.WordLimit?.ToString() ?? "Không giới hạn")</li>
+                                    <li>Thời gian: @(lesson.TimeLimitMinutes?.ToString() ?? "Không giới hạn") phút</li>
+                                </ul>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cột phải: TextBox viết bài -->
+            <div class="col-lg-7">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-pencil"></i> Viết bài của bạn
+                        </h5>
+                        <div>
+                            <span id="wordCount" class="badge bg-light text-dark">0 từ</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <textarea id="essayText" 
+                                  class="form-control" 
+                                  rows="20" 
+                                  placeholder="Viết bài của bạn ở đây..."
+                                  style="font-size: 16px; line-height: 1.6;"></textarea>
+                        
+                        <div class="mt-3 d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted">
+                                    <i class="bi bi-clock"></i> 
+                                    Thời gian: <span id="timer">00:00</span>
+                                </small>
+                            </div>
+                            <div>
+                                <button id="btnSubmit" class="btn btn-primary" disabled>
+                                    <i class="bi bi-send"></i> Nộp bài
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="submittingStatus" class="mt-3" style="display: none;">
+                            <div class="alert alert-info">
+                                <i class="bi bi-hourglass-split"></i> Đang chấm điểm bằng AI, vui lòng đợi...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        const essayText = document.getElementById('essayText');
+        const wordCountEl = document.getElementById('wordCount');
+        const btnSubmit = document.getElementById('btnSubmit');
+        const timerEl = document.getElementById('timer');
+        const submittingStatus = document.getElementById('submittingStatus');
+        
+        let startTime = Date.now();
+        let timerInterval;
+
+        // Đếm số từ
+        function updateWordCount() {
+            const text = essayText.value.trim();
+            const words = text.split(/\s+/).filter(word => word.length > 0);
+            const count = words.length;
+            wordCountEl.textContent = count + ' từ';
+            
+            // Enable/disable nút submit
+            btnSubmit.disabled = count < 50; // Tối thiểu 50 từ
+        }
+
+        // Timer
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            timerEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        // Khởi động timer
+        timerInterval = setInterval(updateTimer, 1000);
+        updateTimer();
+
+        // Event listeners
+        essayText.addEventListener('input', updateWordCount);
+        updateWordCount();
+
+        // Submit bài
+        btnSubmit.addEventListener('click', async function() {
+            const essay = essayText.value.trim();
+            if (essay.length < 50) {
+                alert('Bài viết phải có ít nhất 50 từ!');
+                return;
+            }
+
+            const timeSpent = Math.floor((Date.now() - startTime) / 60000); // phút
+
+            btnSubmit.disabled = true;
+            submittingStatus.style.display = 'block';
+
+            try {
+                const response = await fetch('@Url.Action("Submit")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        lessonId: @lesson.Id,
+                        essay: essay,
+                        timeSpentMinutes: timeSpent
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    window.location.href = '@Url.Action("Result")/' + data.submissionId;
+                } else {
+                    alert('Lỗi: ' + (data.message || 'Không thể nộp bài'));
+                    btnSubmit.disabled = false;
+                    submittingStatus.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Đã xảy ra lỗi khi nộp bài. Vui lòng thử lại.');
+                btnSubmit.disabled = false;
+                submittingStatus.style.display = 'none';
+            }
+        });
+
+        // Dọn dẹp khi rời trang
+        window.addEventListener('beforeunload', function() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+        });
+    </script>
+}
+
+
