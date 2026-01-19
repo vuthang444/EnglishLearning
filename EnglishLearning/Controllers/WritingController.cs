@@ -15,6 +15,7 @@ namespace EnglishLearning.Controllers
         private readonly ISkillRepository _skillRepository;
         private readonly ISubmissionRepository _submissionRepository;
         private readonly IOpenAIService _openAIService;
+        private readonly IOrderRepository _orderRepository;
         private readonly ILogger<WritingController> _logger;
 
         public WritingController(
@@ -22,12 +23,14 @@ namespace EnglishLearning.Controllers
             ISkillRepository skillRepository,
             ISubmissionRepository submissionRepository,
             IOpenAIService openAIService,
+            IOrderRepository orderRepository,
             ILogger<WritingController> logger)
         {
             _lessonRepository = lessonRepository;
             _skillRepository = skillRepository;
             _submissionRepository = submissionRepository;
             _openAIService = openAIService;
+            _orderRepository = orderRepository;
             _logger = logger;
         }
 
@@ -112,12 +115,27 @@ namespace EnglishLearning.Controllers
                     return Json(new { success = false, message = "Không tìm thấy bài tập hoặc đề bài" });
                 }
 
-                // Chấm điểm bằng GPT-4o
-                var evaluation = await _openAIService.EvaluateWritingAsync(
-                    dto.Essay, 
-                    lesson.WritingPrompt, 
-                    lesson.WritingHints
-                );
+                // Check Premium status
+                var isPremium = await _orderRepository.HasActivePremiumAsync(userId);
+
+                // Chấm điểm bằng GPT-4o - chọn method dựa trên Premium status
+                WritingEvaluationDto evaluation;
+                if (isPremium)
+                {
+                    evaluation = await _openAIService.EvaluateWritingPremiumAsync(
+                        dto.Essay, 
+                        lesson.WritingPrompt, 
+                        lesson.WritingHints
+                    );
+                }
+                else
+                {
+                    evaluation = await _openAIService.EvaluateWritingFreeAsync(
+                        dto.Essay, 
+                        lesson.WritingPrompt, 
+                        lesson.WritingHints
+                    );
+                }
 
                 // Tính điểm tổng
                 var overallScore = (int)Math.Round(evaluation.OverallScore);
@@ -144,7 +162,8 @@ namespace EnglishLearning.Controllers
                         grammarErrors = evaluation.GrammarErrors,
                         toneFeedback = evaluation.ToneFeedback,
                         generalFeedback = evaluation.GeneralFeedback,
-                        overallScore = evaluation.OverallScore
+                        overallScore = evaluation.OverallScore,
+                        isPremium = isPremium // Lưu flag Premium
                     }),
                     Score = overallScore,
                     MaxScore = maxScore,

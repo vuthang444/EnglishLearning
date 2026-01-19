@@ -1,0 +1,357 @@
+@{
+    ViewData["Title"] = "Từ điển";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    
+    var wordOfTheDay = ViewBag.WordOfTheDay as CommonLib.DTOs.WordOfTheDayDto;
+}
+
+<style>
+    .dictionary-container {
+        min-height: calc(100vh - 80px);
+        background: linear-gradient(135deg, #4A90E2 0%, #2E5C8A 100%);
+        padding: 60px 20px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .dictionary-header {
+        text-align: center;
+        color: white;
+        margin-bottom: 40px;
+    }
+
+    .dictionary-header h1 {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .dictionary-header h2 {
+        font-size: 2rem;
+        font-weight: 400;
+        margin-bottom: 15px;
+    }
+
+    .dictionary-header p {
+        font-size: 1.1rem;
+        opacity: 0.95;
+    }
+
+    .sparkle-icon {
+        position: absolute;
+        top: 80px;
+        right: 10%;
+        font-size: 3rem;
+        color: rgba(255, 255, 255, 0.3);
+        animation: sparkle 2s infinite;
+    }
+
+    @keyframes sparkle {
+        0%, 100% { opacity: 0.3; transform: scale(1); }
+        50% { opacity: 0.8; transform: scale(1.2); }
+    }
+
+    .search-container {
+        max-width: 800px;
+        margin: 0 auto 50px;
+    }
+
+    .search-bar-wrapper {
+        background: white;
+        border-radius: 16px;
+        padding: 8px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .lang-toggle {
+        background: #f0f7ff;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-weight: 600;
+        color: #2E5C8A;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .lang-toggle:hover {
+        background: #e7f3ff;
+    }
+
+    .search-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        padding: 15px 20px;
+        font-size: 1.1rem;
+        color: #495057;
+    }
+
+    .search-input::placeholder {
+        color: #adb5bd;
+    }
+
+    .random-btn {
+        background: #4A90E2;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 24px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .random-btn:hover {
+        background: #2E5C8A;
+        transform: translateY(-2px);
+    }
+
+    .cards-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+    }
+
+    .card-feature {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.3s;
+    }
+
+    .card-feature:hover {
+        transform: translateY(-5px);
+    }
+
+    .card-feature.blue-card {
+        background: linear-gradient(135deg, #2E5C8A 0%, #4A90E2 100%);
+        color: white;
+    }
+
+    .card-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        opacity: 0.8;
+        margin-bottom: 15px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .word-of-day {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .word-of-day h3 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+        cursor: pointer;
+        transition: color 0.3s;
+    }
+
+    .word-of-day h3:hover {
+        color: #4A90E2;
+    }
+
+    .word-phonetic {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+        font-size: 1.1rem;
+        color: #6c757d;
+    }
+
+    .word-definition {
+        font-size: 1rem;
+        line-height: 1.6;
+        color: #495057;
+    }
+
+    .blue-card .word-definition {
+        color: rgba(255, 255, 255, 0.95);
+    }
+
+    .card-icon {
+        position: absolute;
+        right: 20px;
+        bottom: 20px;
+        font-size: 5rem;
+        opacity: 0.1;
+    }
+
+    .usage-guide-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .floating-buttons {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        z-index: 1000;
+    }
+
+    .floating-btn {
+        width: 50px;
+        height: 50px;
+        background: white;
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 1.2rem;
+    }
+
+    .floating-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    }
+
+    .footer-text {
+        position: fixed;
+        bottom: 10px;
+        right: 30px;
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    @media (max-width: 768px) {
+        .cards-container {
+            grid-template-columns: 1fr;
+        }
+        
+        .dictionary-header h1 {
+            font-size: 2rem;
+        }
+        
+        .dictionary-header h2 {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+
+<div class="dictionary-container">
+    <div class="sparkle-icon">
+        <i class="bi bi-stars"></i>
+    </div>
+
+    <div class="dictionary-header">
+        <h1>Tra từ dễ dàng</h1>
+        <h2>hiểu nghĩa sâu xa</h2>
+        <p>EnglishLearning Dictionary – Vũ trụ từ vựng đa ngôn ngữ trong tầm tay!</p>
+    </div>
+
+    <div class="search-container">
+        <form method="post" action="@Url.Action("Search")" class="search-bar-wrapper">
+            <button type="button" class="lang-toggle">EN - VI</button>
+            <input type="text" name="word" class="search-input" placeholder="Bạn muốn tra từ gì?" required />
+            <input type="hidden" name="fromLang" value="EN" />
+            <input type="hidden" name="toLang" value="VI" />
+            <button type="submit" class="btn btn-primary" style="background: #4A90E2; border: none; padding: 12px 24px; border-radius: 8px;">
+                <i class="bi bi-search"></i> Tìm kiếm
+            </button>
+            <button type="button" class="random-btn" onclick="getRandomWord()">
+                Ngẫu nhiên
+            </button>
+        </form>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger" style="max-width: 800px; margin: 0 auto 20px;">
+            @TempData["Error"]
+        </div>
+    }
+
+    <div class="cards-container">
+        <!-- Word of the day -->
+        <div class="card-feature">
+            <div class="card-label" style="color: #4A90E2;">Word of the day</div>
+            @if (wordOfTheDay != null)
+            {
+                <div class="word-of-day">
+                    <h3 onclick="searchWord('@wordOfTheDay.Word')" style="cursor: pointer;">@wordOfTheDay.Word</h3>
+                    <i class="bi bi-arrow-right" style="font-size: 1.5rem; color: #4A90E2;"></i>
+                </div>
+                <div class="word-phonetic">
+                    <span>@wordOfTheDay.Phonetic</span>
+                    <i class="bi bi-volume-up" style="cursor: pointer;" onclick="playPronunciation('@wordOfTheDay.Word')"></i>
+                </div>
+                <div class="word-definition">@wordOfTheDay.Definition</div>
+            }
+            <div class="card-icon">
+                <i class="bi bi-box"></i>
+            </div>
+        </div>
+
+        <!-- Usage Guide -->
+        <div class="card-feature blue-card">
+            <div class="card-label" style="opacity: 0.8;">Hướng dẫn sử dụng</div>
+            <h3 class="usage-guide-title">Hướng dẫn sử dụng</h3>
+            <div class="card-icon">
+                <i class="bi bi-book"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="floating-buttons">
+        <button class="floating-btn" onclick="getRandomWord()" title="Từ ngẫu nhiên">
+            <i class="bi bi-shuffle"></i>
+        </button>
+        <button class="floating-btn" onclick="scrollToTop()" title="Lên đầu trang">
+            <i class="bi bi-arrow-up-circle" style="color: #4A90E2;"></i>
+        </button>
+    </div>
+
+    <div class="footer-text">
+        Bảo mật - Điều khoản
+    </div>
+</div>
+
+<script>
+    function searchWord(word) {
+        window.location.href = '@Url.Action("Detail")?word=' + encodeURIComponent(word);
+    }
+
+    function getRandomWord() {
+        const words = ['package', 'develop', 'achieve', 'benefit', 'challenge', 'opportunity', 
+                      'experience', 'improve', 'success', 'knowledge', 'education', 'communication'];
+        const randomWord = words[Math.floor(Math.random() * words.length)];
+        searchWord(randomWord);
+    }
+
+    function playPronunciation(word) {
+        // Có thể tích hợp text-to-speech API ở đây
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(word);
+            utterance.lang = 'en-US';
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    function scrollToTop() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+</script>

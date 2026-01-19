@@ -1,6 +1,14 @@
 @{
     ViewData["Title"] = "Dashboard";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    
+    var latestLesson = ViewBag.LatestLesson as CommonLib.Entities.Lesson;
+    var purchasedCourses = ViewBag.PurchasedCourses as List<CommonLib.Entities.Course> ?? new List<CommonLib.Entities.Course>();
+    var recentSubmissions = ViewBag.RecentSubmissions as List<CommonLib.Entities.Submission> ?? new List<CommonLib.Entities.Submission>();
+    var recentSubmissionLessons = ViewBag.RecentSubmissionLessons as Dictionary<int, CommonLib.Entities.Lesson> ?? new Dictionary<int, CommonLib.Entities.Lesson>();
+    var isPremium = ViewBag.IsPremium as bool? ?? false;
+    var lessonNumber = ViewBag.LessonNumber as int? ?? 1;
+    var averageScore = ViewBag.AverageScore as double? ?? 0;
 }
 
 <style>
@@ -316,7 +324,15 @@
                 <i class="bi bi-person-fill"></i>
             </div>
             <div class="welcome-content">
-                <h2>Xin chào, @ViewBag.UserName</h2>
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <h2 style="margin: 0;">Xin chào, @ViewBag.UserName</h2>
+                    @if (isPremium)
+                    {
+                        <span class="badge bg-success" style="font-size: 0.8rem; padding: 5px 10px;">
+                            <i class="bi bi-star-fill"></i> Premium
+                        </span>
+                    }
+                </div>
                 <p>Cùng EnglishLearning tiến bộ mỗi ngày nào!</p>
             </div>
         </div>
@@ -324,72 +340,125 @@
         <!-- Bài học gần nhất -->
         <div class="content-card">
             <h3 class="card-title">Bài học gần nhất</h3>
-            @if (ViewBag.LatestLesson != null)
+            @if (latestLesson != null)
             {
-                var lesson = ViewBag.LatestLesson as CommonLib.Entities.Lesson;
-                if (lesson != null)
-                {
-                    <div class="lesson-card">
-                        <div class="lesson-icon">
-                            13<br />LESSON
-                        </div>
-                        <div class="lesson-info">
-                            <div class="lesson-title">@lesson.Title</div>
-                            <div class="lesson-meta">
-                                <span>2/ Section</span>
-                                <span class="lesson-stars">★★★★★★</span>
-                            </div>
-                        </div>
-                        <div>
-                            <a href="@Url.Action("Exercise", "Reading", new { lessonId = lesson.Id })" class="btn-continue">
-                                Tiếp tục học →
-                            </a>
+                var skillName = latestLesson.Skill?.Name ?? "General";
+                var totalLessonsInSkill = ViewBag.AvailableLessons != null 
+                    ? ((List<CommonLib.Entities.Lesson>)ViewBag.AvailableLessons).Count(l => l.SkillId == latestLesson.SkillId)
+                    : 1;
+                
+                <div class="lesson-card">
+                    <div class="lesson-icon">
+                        @lessonNumber<br />LESSON
+                    </div>
+                    <div class="lesson-info">
+                        <div class="lesson-title">@latestLesson.Title</div>
+                        <div class="lesson-meta">
+                            <span>@skillName</span>
+                            @if (averageScore > 0)
+                            {
+                                <span class="lesson-stars">
+                                    @{
+                                        var stars = Math.Round(averageScore / 20); // 5 sao = 100 điểm
+                                        stars = Math.Min(5, Math.Max(0, stars));
+                                    }
+                                    @for (int i = 0; i < 5; i++)
+                                    {
+                                        <i class="bi @(i < stars ? "bi-star-fill" : "bi-star")" style="color: #ffc107;"></i>
+                                    }
+                                </span>
+                            }
                         </div>
                     </div>
-                }
+                    <div>
+                        @{
+                            var skillRoute = skillName.ToLower();
+                            var actionName = "Exercise";
+                            var controllerName = skillRoute == "reading" ? "Reading" 
+                                : skillRoute == "speaking" ? "Speaking" 
+                                : skillRoute == "writing" ? "Writing" 
+                                : skillRoute == "listening" ? "Listening"
+                                : "Home";
+                        }
+                        <a href="@Url.Action(actionName, controllerName, new { lessonId = latestLesson.Id })" class="btn-continue">
+                            Tiếp tục học →
+                        </a>
+                    </div>
+                </div>
             }
             else
             {
-                <p class="text-muted">Chưa có bài học nào. Hãy bắt đầu học ngay!</p>
+                <p class="text-muted">Chưa có bài học nào. <a href="/Courses">Hãy bắt đầu học ngay!</a></p>
             }
         </div>
 
         <!-- Study Plan -->
-        <div class="study-plan-card">
-            <p class="study-plan-message">
-                Ôi! Khoá học bạn sở hữu không có sẵn Study Plan phù hợp. Hãy cùng EnglishLearning khám phá các khoá học khác để trải nghiệm Study Plan nhé!
-            </p>
-            <a href="#" class="btn-explore">Khám phá ngay →</a>
-        </div>
+        @if (!purchasedCourses.Any())
+        {
+            <div class="study-plan-card">
+                <p class="study-plan-message">
+                    Ôi! Khoá học bạn sở hữu không có sẵn Study Plan phù hợp. Hãy cùng EnglishLearning khám phá các khoá học khác để trải nghiệm Study Plan nhé!
+                </p>
+                <a href="/Courses" class="btn-explore">Khám phá ngay →</a>
+            </div>
+        }
 
         <!-- Khoá học của tôi -->
         <div class="content-card">
             <div class="courses-header">
                 <h3 class="card-title" style="margin: 0;">Khoá học của tôi</h3>
-                <a href="#">Xem tất cả</a>
+                <a href="/Courses/MyCourses">Xem tất cả</a>
             </div>
             <div class="row">
-                @if (ViewBag.AllLessons != null)
+                @if (purchasedCourses.Any())
                 {
-                    var lessons = ViewBag.AllLessons as List<CommonLib.Entities.Lesson>;
-                    if (lessons != null)
+                    var displayCourses = purchasedCourses.Take(4).ToList();
+                    @foreach (var course in displayCourses)
                     {
-                        var displayLessons = lessons.Take(4).ToList();
-                        @foreach (var lesson in displayLessons)
-                        {
-                            <div class="col-md-6">
-                                <div class="course-card">
-                                    <h5 style="color: #2E5C8A; margin-bottom: 10px;">@lesson.Title</h5>
-                                    <p class="text-muted" style="font-size: 0.9rem; margin: 0;">
-                                        @lesson.Skill?.Name
-                                    </p>
-                                </div>
+                        <div class="col-md-6">
+                            <div class="course-card">
+                                <h5 style="color: #2E5C8A; margin-bottom: 10px;">@course.Title</h5>
+                                <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 10px;">
+                                    @course.Level · @course.Topic
+                                </p>
+                                <a href="/Courses/Detail/@course.Id" class="btn btn-sm btn-outline-primary">Xem chi tiết</a>
                             </div>
-                        }
+                        </div>
                     }
+                }
+                else
+                {
+                    <div class="col-12">
+                        <p class="text-muted">Bạn chưa có khóa học nào. <a href="/Courses">Khám phá khóa học ngay!</a></p>
+                    </div>
                 }
             </div>
         </div>
+
+        <!-- Recent Activity -->
+        @if (recentSubmissions.Any())
+        {
+            <div class="content-card">
+                <h3 class="card-title">Hoạt động gần đây</h3>
+                <div class="list-group">
+                    @foreach (var submission in recentSubmissions)
+                    {
+                        if (recentSubmissionLessons.TryGetValue(submission.LessonId, out var lesson))
+                        {
+                            <div class="list-group-item d-flex justify-content-between align-items-center" style="border: none; border-bottom: 1px solid #e9ecef; padding: 15px 0;">
+                                <div>
+                                    <h6 class="mb-1" style="font-size: 0.95rem; color: #2E5C8A;">@lesson.Title</h6>
+                                    <small class="text-muted">@(submission.CompletedAt?.ToString("dd/MM/yyyy HH:mm") ?? submission.CreatedAt.ToString("dd/MM/yyyy HH:mm"))</small>
+                                </div>
+                                <span class="badge @(submission.Score >= 70 ? "bg-success" : submission.Score >= 50 ? "bg-warning" : "bg-danger")" style="font-size: 0.9rem;">
+                                    @submission.Score/@submission.MaxScore
+                                </span>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        }
     </div>
 
     <div class="col-right">
@@ -397,23 +466,43 @@
         <div class="learning-profile-card">
             <div class="profile-header">
                 <h5 style="margin: 0; color: #2E5C8A; font-weight: 600;">Learning Profile</h5>
-                <a href="#">Xem tất cả</a>
+                <a href="/Courses">Xem tất cả</a>
             </div>
             <div>
-                <h6 style="color: #6c757d; font-size: 0.9rem; margin-bottom: 15px;">Your IELTS Level</h6>
+                <h6 style="color: #6c757d; font-size: 0.9rem; margin-bottom: 15px;">
+                    Your IELTS Level: <strong style="color: #2E5C8A;">@ViewBag.IeltsLevel</strong>
+                </h6>
                 <div class="progress-bar-container">
-                    <div class="progress-bar-fill"></div>
-                    <div class="progress-marker">
+                    <div class="progress-bar-fill" style="width: @ViewBag.ProgressPercentage%"></div>
+                    <div class="progress-marker" style="left: @ViewBag.ProgressPercentage%; transform: translateX(-50%);">
                         <i class="bi bi-bullseye" style="font-size: 0.7rem; color: white;"></i>
                     </div>
                 </div>
                 <div class="progress-labels">
                     <span>Entry</span>
-                    <span>Predicted</span>
+                    <span>@ViewBag.IeltsLevel</span>
                     <span>Target</span>
                 </div>
+                @if (averageScore > 0)
+                {
+                    <p class="text-center mt-3 mb-0">
+                        <small class="text-muted">Điểm trung bình: <strong style="color: #2E5C8A;">@averageScore</strong></small>
+                    </p>
+                }
             </div>
         </div>
+
+        <!-- Streak -->
+        @if (ViewBag.Streak != null && (int)ViewBag.Streak > 0)
+        {
+            <div class="content-card">
+                <h5 class="card-title">🔥 Streak</h5>
+                <div class="text-center">
+                    <h2 style="color: #ff6b35; font-weight: 700; margin: 10px 0;">@ViewBag.Streak</h2>
+                    <p class="text-muted mb-0">ngày học liên tiếp</p>
+                </div>
+            </div>
+        }
 
         <!-- Learning Summary -->
         <div class="content-card">

@@ -15,6 +15,7 @@ namespace EnglishLearning.Controllers
         private readonly ISkillRepository _skillRepository;
         private readonly ISubmissionRepository _submissionRepository;
         private readonly IOpenAIService _openAIService;
+        private readonly IOrderRepository _orderRepository;
         private readonly ILogger<SpeakingController> _logger;
 
         public SpeakingController(
@@ -22,12 +23,14 @@ namespace EnglishLearning.Controllers
             ISkillRepository skillRepository,
             ISubmissionRepository submissionRepository,
             IOpenAIService openAIService,
+            IOrderRepository orderRepository,
             ILogger<SpeakingController> logger)
         {
             _lessonRepository = lessonRepository;
             _skillRepository = skillRepository;
             _submissionRepository = submissionRepository;
             _openAIService = openAIService;
+            _orderRepository = orderRepository;
             _logger = logger;
         }
 
@@ -144,8 +147,19 @@ namespace EnglishLearning.Controllers
                     transcription = await _openAIService.TranscribeAudioAsync(audioStream, audioFile.FileName);
                 }
 
-                // Chấm điểm bằng GPT-4o
-                var evaluation = await _openAIService.EvaluateSpeakingAsync(transcription, lesson.ReferenceText);
+                // Check Premium status
+                var isPremium = await _orderRepository.HasActivePremiumAsync(userId);
+
+                // Chấm điểm bằng GPT-4o - chọn method dựa trên Premium status
+                SpeakingEvaluationDto evaluation;
+                if (isPremium)
+                {
+                    evaluation = await _openAIService.EvaluateSpeakingPremiumAsync(transcription, lesson.ReferenceText);
+                }
+                else
+                {
+                    evaluation = await _openAIService.EvaluateSpeakingFreeAsync(transcription, lesson.ReferenceText);
+                }
 
                 // Tính điểm tổng (trung bình của Accuracy và Fluency)
                 var overallScore = (int)Math.Round(evaluation.OverallScore);
@@ -163,7 +177,11 @@ namespace EnglishLearning.Controllers
                         fluency = evaluation.Fluency,
                         mispronouncedWords = evaluation.MispronouncedWords,
                         hesitationCount = evaluation.HesitationCount,
-                        feedback = evaluation.Feedback
+                        feedback = evaluation.Feedback,
+                        isPremium = isPremium, // Lưu flag Premium
+                        improvedVersion = evaluation.ImprovedVersion, // Premium only
+                        suggestedVocabulary = evaluation.SuggestedVocabulary, // Premium only
+                        detailedErrors = evaluation.DetailedErrors // Premium only
                     }),
                     Score = overallScore,
                     MaxScore = maxScore,
@@ -178,6 +196,7 @@ namespace EnglishLearning.Controllers
                 {
                     success = true,
                     submissionId = createdSubmission.Id,
+                    isPremium = isPremium,
                     evaluation = new
                     {
                         accuracy = evaluation.Accuracy,
@@ -186,7 +205,10 @@ namespace EnglishLearning.Controllers
                         mispronouncedWords = evaluation.MispronouncedWords,
                         transcription = evaluation.Transcription,
                         hesitationCount = evaluation.HesitationCount,
-                        feedback = evaluation.Feedback
+                        feedback = evaluation.Feedback,
+                        improvedVersion = evaluation.ImprovedVersion,
+                        suggestedVocabulary = evaluation.SuggestedVocabulary,
+                        detailedErrors = evaluation.DetailedErrors
                     }
                 });
             }

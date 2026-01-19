@@ -23,6 +23,16 @@ namespace DataServiceLib.Repositories
         public async Task<List<Order>> GetPaidByUserAndCourseAsync(int userId, int courseId) =>
             await _context.Orders.Where(o => o.UserId == userId && o.CourseId == courseId && o.Status == "Paid").ToListAsync();
 
+        public async Task<bool> HasActivePremiumAsync(int userId)
+        {
+            // Kiểm tra user có đơn hàng đã thanh toán trong vòng 30 ngày gần đây
+            var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
+            return await _context.Orders
+                .AnyAsync(o => o.UserId == userId 
+                    && o.Status == "Paid" 
+                    && o.CreatedAt >= thirtyDaysAgo);
+        }
+
         public async Task<Order> CreateAsync(Order order)
         {
             order.CreatedAt = DateTime.UtcNow;

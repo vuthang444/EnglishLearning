@@ -43,6 +43,18 @@ namespace CommonLib.DTOs
         public string Transcription { get; set; } = string.Empty; // Văn bản học viên nói (từ Whisper)
         public string Feedback { get; set; } = string.Empty; // Phản hồi từ AI
         public int HesitationCount { get; set; } // Số lần ngập ngừng (uhm, ah)
+        
+        // Premium-only fields
+        public string? ImprovedVersion { get; set; } // Bản mẫu hoàn hảo (Premium only)
+        public List<string> SuggestedVocabulary { get; set; } = new List<string>(); // 5 từ vựng nâng cao (Premium only)
+        public List<SpeakingDetailedError> DetailedErrors { get; set; } = new List<SpeakingDetailedError>(); // Lỗi chi tiết (Premium only)
+    }
+
+    public class SpeakingDetailedError
+    {
+        public string Text { get; set; } = string.Empty; // Đoạn text có lỗi
+        public string Correction { get; set; } = string.Empty; // Cách sửa
+        public string Reason { get; set; } = string.Empty; // Lý do lỗi
     }
 
     public class SpeakingExerciseDto

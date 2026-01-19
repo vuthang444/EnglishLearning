@@ -6,6 +6,17 @@
     var lesson = ViewBag.Lesson as CommonLib.Entities.Lesson;
     var evaluation = ViewBag.Evaluation as Dictionary<string, object> ?? new Dictionary<string, object>();
     
+    // Check Premium status
+    bool isPremium = false;
+    if (evaluation.ContainsKey("isPremium"))
+    {
+        var premiumValue = evaluation["isPremium"];
+        if (premiumValue is bool boolValue)
+            isPremium = boolValue;
+        else if (premiumValue is string strValue)
+            bool.TryParse(strValue, out isPremium);
+    }
+    
     // Helper function to safely get double value from evaluation
     double GetDoubleValue(string key)
     {
@@ -224,14 +235,159 @@
                     @if (!string.IsNullOrEmpty(feedback))
                     {
                         <div class="card mb-4 border-info">
-                            <div class="card-header bg-info text-white">
+                            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
                                 <h6 class="mb-0">
                                     <i class="bi bi-chat-dots"></i> Phản hồi từ AI
                                 </h6>
+                                @if (!isPremium)
+                                {
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-lock"></i> Free Version
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-star-fill"></i> Premium
+                                    </span>
+                                }
                             </div>
                             <div class="card-body">
                                 <p class="mb-0">@feedback</p>
                             </div>
+                        </div>
+                    }
+
+                    <!-- Premium-only: Improved Version -->
+                    @if (isPremium)
+                    {
+                        var improvedVersion = GetStringValue("improvedVersion");
+                        if (!string.IsNullOrEmpty(improvedVersion))
+                        {
+                            <div class="card mb-4 border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-star-fill"></i> Bản mẫu hoàn hảo (Premium)
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-0" style="font-style: italic;">@Html.Raw(improvedVersion.Replace("\n", "<br>"))</p>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Premium-only: Suggested Vocabulary -->
+                        @if (evaluation.ContainsKey("suggestedVocabulary"))
+                        {
+                            var suggestedVocab = evaluation["suggestedVocabulary"];
+                            List<string> vocabList = new List<string>();
+                            if (suggestedVocab is System.Text.Json.JsonElement jsonElement && jsonElement.ValueKind == System.Text.Json.JsonValueKind.Array)
+                            {
+                                foreach (var item in jsonElement.EnumerateArray())
+                                {
+                                    vocabList.Add(item.GetString() ?? "");
+                                }
+                            }
+                            else if (suggestedVocab is List<string> list)
+                            {
+                                vocabList = list;
+                            }
+
+                            @if (vocabList.Any())
+                            {
+                                <div class="card mb-4 border-success">
+                                    <div class="card-header bg-success text-white">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-star-fill"></i> Từ vựng nâng cao gợi ý (Premium)
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="d-flex flex-wrap gap-2">
+                                            @foreach (var word in vocabList)
+                                            {
+                                                <span class="badge bg-primary">@word</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+
+                        <!-- Premium-only: Detailed Errors -->
+                        @if (evaluation.ContainsKey("detailedErrors"))
+                        {
+                            var detailedErrors = evaluation["detailedErrors"];
+                            List<Dictionary<string, object>> errorsList = new List<Dictionary<string, object>>();
+                            if (detailedErrors is System.Text.Json.JsonElement jsonElement && jsonElement.ValueKind == System.Text.Json.JsonValueKind.Array)
+                            {
+                                foreach (var item in jsonElement.EnumerateArray())
+                                {
+                                    if (item.ValueKind == System.Text.Json.JsonValueKind.Object)
+                                    {
+                                        var errorDict = new Dictionary<string, object>();
+                                        foreach (var prop in item.EnumerateObject())
+                                        {
+                                            errorDict[prop.Name] = prop.Value.GetString() ?? "";
+                                        }
+                                        errorsList.Add(errorDict);
+                                    }
+                                }
+                            }
+
+                            @if (errorsList.Any())
+                            {
+                                <div class="card mb-4 border-warning">
+                                    <div class="card-header bg-warning text-dark">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-star-fill"></i> Phân tích lỗi chi tiết (Premium)
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="list-group">
+                                            @foreach (var error in errorsList)
+                                            {
+                                                var errorText = error.ContainsKey("text") ? error["text"].ToString() : "";
+                                                var correction = error.ContainsKey("correction") ? error["correction"].ToString() : "";
+                                                var reason = error.ContainsKey("reason") ? error["reason"].ToString() : "";
+                                                
+                                                <div class="list-group-item">
+                                                    <div class="d-flex w-100 justify-content-between">
+                                                        <h6 class="mb-1">
+                                                            <span class="text-danger">"@errorText"</span>
+                                                        </h6>
+                                                    </div>
+                                                    <p class="mb-1">
+                                                        <strong>Sửa thành:</strong> 
+                                                        <span class="text-success">"@correction"</span>
+                                                    </p>
+                                                    @if (!string.IsNullOrEmpty(reason))
+                                                    {
+                                                        <small class="text-muted">@reason</small>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    }
+                    else
+                    {
+                        <!-- Free user upgrade prompt -->
+                        <div class="alert alert-warning">
+                            <h6 class="alert-heading">
+                                <i class="bi bi-lock"></i> Nâng cấp Premium để nhận phân tích chi tiết hơn!
+                            </h6>
+                            <p class="mb-2">Với Premium, bạn sẽ nhận được:</p>
+                            <ul class="mb-2">
+                                <li>Bản mẫu hoàn hảo (Improved Version)</li>
+                                <li>5 từ vựng nâng cao gợi ý</li>
+                                <li>Phân tích lỗi chi tiết với giải thích và cách sửa</li>
+                            </ul>
+                            <a href="/Courses" class="btn btn-primary btn-sm">
+                                <i class="bi bi-star"></i> Nâng cấp ngay
+                            </a>
                         </div>
                     }
 

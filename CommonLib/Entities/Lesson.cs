@@ -72,6 +72,7 @@ namespace CommonLib.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
         public bool IsActive { get; set; } = true;
+        public bool IsFreePreview { get; set; } = false; // Đánh dấu bài học là Free Preview
 
         public ICollection<Exercise> Exercises { get; set; } = new List<Exercise>();
     }

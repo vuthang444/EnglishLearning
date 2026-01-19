@@ -201,6 +201,218 @@ Trả về định dạng JSON:
             }
         }
 
+        public async Task<SpeakingEvaluationDto> EvaluateSpeakingFreeAsync(string studentTranscription, string referenceText)
+        {
+            try
+            {
+                var prompt = $@"Hãy đóng vai trò giáo viên. Chấm điểm bài làm này của học viên trên thang điểm 10.
+
+Văn bản học viên nói: {studentTranscription}
+Văn bản mẫu: {referenceText}
+
+Trả về kết quả dạng JSON:
+{{
+  ""overallScore"": 7.5,
+  ""feedback"": ""Nhận xét ngắn gọn 1 câu về bài làm"",
+  ""transcription"": ""{studentTranscription}""
+}}";
+
+                var requestBody = new
+                {
+                    model = "gpt-4o",
+                    messages = new[]
+                    {
+                        new { role = "system", content = "Bạn là giáo viên tiếng Anh. Luôn trả về JSON hợp lệ với các trường: overallScore (0-10), feedback (1 câu ngắn gọn), transcription." },
+                        new { role = "user", content = prompt }
+                    },
+                    temperature = 0.3
+                };
+
+                var json = JsonSerializer.Serialize(requestBody);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync($"{_baseUrl}/chat/completions", content);
+                response.EnsureSuccessStatusCode();
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var responseJson = JsonDocument.Parse(responseContent);
+                var aiContent = responseJson.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+
+                aiContent = Regex.Replace(aiContent, @"```json\s*", "", RegexOptions.IgnoreCase);
+                aiContent = Regex.Replace(aiContent, @"```\s*", "", RegexOptions.IgnoreCase);
+                aiContent = aiContent.Trim();
+
+                try
+                {
+                    using var doc = JsonDocument.Parse(aiContent);
+                    var root = doc.RootElement;
+                    
+                    var result = new SpeakingEvaluationDto
+                    {
+                        Transcription = studentTranscription
+                    };
+                    
+                    if (root.TryGetProperty("overallScore", out var score))
+                    {
+                        // Convert từ thang 10 sang thang 100
+                        result.OverallScore = score.GetDouble() * 10;
+                        result.Accuracy = result.OverallScore;
+                        result.Fluency = result.OverallScore;
+                    }
+                    
+                    if (root.TryGetProperty("feedback", out var feedback))
+                    {
+                        result.Feedback = feedback.GetString() ?? "Đã hoàn thành bài nói.";
+                    }
+                    
+                    return result;
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogWarning(ex, "Không thể parse JSON từ OpenAI response (Free): {Content}", aiContent);
+                }
+
+                // Fallback
+                return new SpeakingEvaluationDto
+                {
+                    OverallScore = 70.0,
+                    Accuracy = 70.0,
+                    Fluency = 70.0,
+                    Transcription = studentTranscription,
+                    Feedback = "Đã hoàn thành bài nói. Nâng cấp Premium để nhận phân tích chi tiết hơn."
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi chấm điểm Speaking FREE bằng AI");
+                throw;
+            }
+        }
+
+        public async Task<SpeakingEvaluationDto> EvaluateSpeakingPremiumAsync(string studentTranscription, string referenceText)
+        {
+            try
+            {
+                var prompt = $@"Hãy đóng vai trò giáo viên chuyên gia. Phân tích bài làm của học viên Premium.
+
+Văn bản học viên nói: {studentTranscription}
+Văn bản mẫu: {referenceText}
+
+Yêu cầu:
+1. Chấm điểm chi tiết theo 4 tiêu chí: Grammar, Vocabulary, Fluency, Coherence
+2. Chỉ ra từng lỗi sai, giải thích tại sao sai và đưa ra cách sửa (Correction)
+3. Viết lại một bản mẫu hoàn hảo (Improved Version)
+4. Gợi ý 5 từ vựng nâng cao dựa trên nội dung bài làm
+
+Trả về định dạng JSON:
+{{
+  ""accuracy"": 85.5,
+  ""fluency"": 80.0,
+  ""overallScore"": 82.75,
+  ""mispronouncedWords"": [""word1"", ""word2""],
+  ""transcription"": ""{studentTranscription}"",
+  ""hesitationCount"": 3,
+  ""feedback"": ""Phản hồi chi tiết bằng tiếng Việt..."",
+  ""improvedVersion"": ""Bản mẫu hoàn hảo..."",
+  ""suggestedVocabulary"": [""word1"", ""word2"", ""word3"", ""word4"", ""word5""],
+  ""detailedErrors"": [
+    {{
+      ""text"": ""đoạn text có lỗi"",
+      ""correction"": ""cách sửa"",
+      ""reason"": ""lý do lỗi""
+    }}
+  ]
+}}";
+
+                var requestBody = new
+                {
+                    model = "gpt-4o",
+                    messages = new[]
+                    {
+                        new { role = "system", content = "Bạn là chuyên gia chấm điểm Speaking tiếng Anh Premium. Luôn trả về JSON hợp lệ với đầy đủ các trường: accuracy, fluency, overallScore, mispronouncedWords, transcription, hesitationCount, feedback, improvedVersion, suggestedVocabulary (mảng 5 từ), detailedErrors (mảng)." },
+                        new { role = "user", content = prompt }
+                    },
+                    temperature = 0.3
+                };
+
+                var json = JsonSerializer.Serialize(requestBody);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync($"{_baseUrl}/chat/completions", content);
+                response.EnsureSuccessStatusCode();
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var responseJson = JsonDocument.Parse(responseContent);
+                var aiContent = responseJson.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+
+                aiContent = Regex.Replace(aiContent, @"```json\s*", "", RegexOptions.IgnoreCase);
+                aiContent = Regex.Replace(aiContent, @"```\s*", "", RegexOptions.IgnoreCase);
+                aiContent = aiContent.Trim();
+
+                try
+                {
+                    using var doc = JsonDocument.Parse(aiContent);
+                    var root = doc.RootElement;
+                    
+                    var result = new SpeakingEvaluationDto
+                    {
+                        Transcription = studentTranscription
+                    };
+                    
+                    if (root.TryGetProperty("accuracy", out var acc)) result.Accuracy = acc.GetDouble();
+                    if (root.TryGetProperty("fluency", out var flu)) result.Fluency = flu.GetDouble();
+                    if (root.TryGetProperty("overallScore", out var overall)) result.OverallScore = overall.GetDouble();
+                    if (root.TryGetProperty("hesitationCount", out var hes)) result.HesitationCount = hes.GetInt32();
+                    if (root.TryGetProperty("feedback", out var fb)) result.Feedback = fb.GetString() ?? "";
+                    if (root.TryGetProperty("improvedVersion", out var imp)) result.ImprovedVersion = imp.GetString();
+                    if (root.TryGetProperty("transcription", out var trans)) result.Transcription = trans.GetString() ?? studentTranscription;
+                    
+                    if (root.TryGetProperty("mispronouncedWords", out var misWords) && misWords.ValueKind == JsonValueKind.Array)
+                    {
+                        result.MispronouncedWords = misWords.EnumerateArray().Select(e => e.GetString() ?? "").Where(s => !string.IsNullOrEmpty(s)).ToList();
+                    }
+                    
+                    if (root.TryGetProperty("suggestedVocabulary", out var vocab) && vocab.ValueKind == JsonValueKind.Array)
+                    {
+                        result.SuggestedVocabulary = vocab.EnumerateArray().Select(e => e.GetString() ?? "").Where(s => !string.IsNullOrEmpty(s)).ToList();
+                    }
+                    
+                    if (root.TryGetProperty("detailedErrors", out var errors) && errors.ValueKind == JsonValueKind.Array)
+                    {
+                        result.DetailedErrors = errors.EnumerateArray().Select(e =>
+                        {
+                            var err = new SpeakingDetailedError();
+                            if (e.TryGetProperty("text", out var t)) err.Text = t.GetString() ?? "";
+                            if (e.TryGetProperty("correction", out var c)) err.Correction = c.GetString() ?? "";
+                            if (e.TryGetProperty("reason", out var r)) err.Reason = r.GetString() ?? "";
+                            return err;
+                        }).Where(e => !string.IsNullOrEmpty(e.Text)).ToList();
+                    }
+                    
+                    return result;
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogWarning(ex, "Không thể parse JSON từ OpenAI response (Premium): {Content}", aiContent);
+                }
+
+                // Fallback
+                return new SpeakingEvaluationDto
+                {
+                    Accuracy = 70.0,
+                    Fluency = 70.0,
+                    OverallScore = 70.0,
+                    Transcription = studentTranscription,
+                    Feedback = "Đã hoàn thành bài nói. Vui lòng thử lại để có kết quả chính xác hơn."
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi chấm điểm Speaking PREMIUM bằng AI");
+                throw;
+            }
+        }
+
         public async Task<WritingContentGenerationResult> GenerateWritingPromptAsync(string topic, string level)
         {
             try
@@ -384,6 +596,218 @@ Trả về định dạng JSON:
             }
         }
 
+        public async Task<WritingEvaluationDto> EvaluateWritingFreeAsync(string studentEssay, string writingPrompt, string? hints = null)
+        {
+            try
+            {
+                var prompt = $@"Hãy đóng vai trò giáo viên. Chấm điểm bài làm này của học viên trên thang điểm 10.
+
+Đề bài: {writingPrompt}
+{(string.IsNullOrEmpty(hints) ? "" : $"\nGợi ý: {hints}")}
+
+Bài viết của học viên:
+{studentEssay}
+
+Trả về kết quả dạng JSON:
+{{
+  ""overallScore"": 7.5,
+  ""generalFeedback"": ""Nhận xét ngắn gọn 1 câu về bài làm"",
+  ""wordCount"": 250
+}}";
+
+                var requestBody = new
+                {
+                    model = "gpt-4o",
+                    messages = new[]
+                    {
+                        new { role = "system", content = "Bạn là giáo viên tiếng Anh. Luôn trả về JSON hợp lệ với các trường: overallScore (0-10), generalFeedback (1 câu ngắn gọn), wordCount." },
+                        new { role = "user", content = prompt }
+                    },
+                    temperature = 0.3
+                };
+
+                var json = JsonSerializer.Serialize(requestBody);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync($"{_baseUrl}/chat/completions", content);
+                response.EnsureSuccessStatusCode();
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var responseJson = JsonDocument.Parse(responseContent);
+                var aiContent = responseJson.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+
+                aiContent = Regex.Replace(aiContent, @"```json\s*", "", RegexOptions.IgnoreCase);
+                aiContent = Regex.Replace(aiContent, @"```\s*", "", RegexOptions.IgnoreCase);
+                aiContent = aiContent.Trim();
+
+                try
+                {
+                    using var doc = JsonDocument.Parse(aiContent);
+                    var root = doc.RootElement;
+                    
+                    var result = new WritingEvaluationDto();
+                    
+                    if (root.TryGetProperty("overallScore", out var score))
+                    {
+                        // Convert từ thang 10 sang thang 100
+                        result.OverallScore = score.GetDouble() * 10;
+                        result.TaskResponseScore = result.OverallScore / 4;
+                        result.CoherenceScore = result.OverallScore / 4;
+                        result.LexicalScore = result.OverallScore / 4;
+                        result.GrammarScore = result.OverallScore / 4;
+                    }
+                    
+                    if (root.TryGetProperty("generalFeedback", out var feedback))
+                    {
+                        result.GeneralFeedback = feedback.GetString() ?? "Đã hoàn thành bài viết.";
+                    }
+                    
+                    if (root.TryGetProperty("wordCount", out var wc))
+                    {
+                        result.WordCount = wc.GetInt32();
+                    }
+                    else
+                    {
+                        result.WordCount = studentEssay.Split(new[] { ' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length;
+                    }
+                    
+                    return result;
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogWarning(ex, "Không thể parse JSON từ OpenAI response (Free): {Content}", aiContent);
+                }
+
+                // Fallback
+                return new WritingEvaluationDto
+                {
+                    OverallScore = 70.0,
+                    TaskResponseScore = 17.5,
+                    CoherenceScore = 17.5,
+                    LexicalScore = 17.5,
+                    GrammarScore = 17.5,
+                    GeneralFeedback = "Đã hoàn thành bài viết. Nâng cấp Premium để nhận phân tích chi tiết hơn.",
+                    WordCount = studentEssay.Split(new[] { ' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi chấm điểm Writing FREE bằng AI");
+                throw;
+            }
+        }
+
+        public async Task<WritingEvaluationDto> EvaluateWritingPremiumAsync(string studentEssay, string writingPrompt, string? hints = null)
+        {
+            try
+            {
+                var rubricPrompt = @"Hãy kiểm tra bài viết sau. Đừng chỉ sửa lỗi chính tả, hãy tập trung vào:
+
+1. Task Response (0-25 điểm): Bài viết đã trả lời đúng trọng tâm đề bài chưa? Có đủ ý tưởng và ví dụ không?
+
+2. Coherence and Cohesion (0-25 điểm): Cấu trúc bài viết có logic không? Sử dụng từ nối có phù hợp không?
+
+3. Lexical Resource (0-25 điểm): Từ vựng có đa dạng và học thuật không? Gợi ý những từ vựng học thuật hơn để thay thế các từ đơn giản.
+
+4. Grammar (0-25 điểm): Tìm các lỗi về thì, mạo từ và cấu trúc câu. Đưa ra cách sửa và lý do.
+
+5. Tone: Ngôn ngữ có phù hợp với văn phong bài viết (trang trọng/không trang trọng) không?
+
+Đếm số từ trong bài viết.";
+
+                var prompt = $@"{rubricPrompt}
+
+Đề bài: {writingPrompt}
+{(string.IsNullOrEmpty(hints) ? "" : $"\nGợi ý: {hints}")}
+
+Bài viết của học viên:
+{studentEssay}
+
+Trả về định dạng JSON:
+{{
+  ""overallScore"": 75.5,
+  ""taskResponseScore"": 20.0,
+  ""taskResponseFeedback"": ""Phản hồi về Task Response..."",
+  ""coherenceScore"": 18.5,
+  ""coherenceFeedback"": ""Phản hồi về Coherence..."",
+  ""lexicalScore"": 19.0,
+  ""lexicalFeedback"": ""Phản hồi về Lexical Resource..."",
+  ""suggestedVocabulary"": [""academic word 1"", ""academic word 2""],
+  ""grammarScore"": 18.0,
+  ""grammarFeedback"": ""Phản hồi về Grammar..."",
+  ""grammarErrors"": [
+    {{
+      ""text"": ""đoạn text có lỗi"",
+      ""correction"": ""cách sửa"",
+      ""reason"": ""lý do lỗi""
+    }}
+  ],
+  ""toneFeedback"": ""Đánh giá về tone..."",
+  ""generalFeedback"": ""Phản hồi tổng quan bằng tiếng Việt thân thiện, khích lệ..."",
+  ""wordCount"": 250
+}}";
+
+                var requestBody = new
+                {
+                    model = "gpt-4o",
+                    messages = new[]
+                    {
+                        new { role = "system", content = "Bạn là chuyên gia chấm điểm IELTS Writing Task 2 Premium. Luôn trả về JSON hợp lệ với đầy đủ các trường theo rubric IELTS." },
+                        new { role = "user", content = prompt }
+                    },
+                    temperature = 0.3
+                };
+
+                var json = JsonSerializer.Serialize(requestBody);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync($"{_baseUrl}/chat/completions", content);
+                response.EnsureSuccessStatusCode();
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var responseJson = JsonDocument.Parse(responseContent);
+                var aiContent = responseJson.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+
+                aiContent = Regex.Replace(aiContent, @"```json\s*", "", RegexOptions.IgnoreCase);
+                aiContent = Regex.Replace(aiContent, @"```\s*", "", RegexOptions.IgnoreCase);
+                aiContent = aiContent.Trim();
+
+                try
+                {
+                    var result = JsonSerializer.Deserialize<WritingEvaluationDto>(aiContent, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (result != null)
+                    {
+                        return result;
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogWarning(ex, "Không thể parse JSON từ OpenAI response (Premium): {Content}", aiContent);
+                }
+
+                // Fallback: Return basic evaluation
+                return new WritingEvaluationDto
+                {
+                    OverallScore = 70.0,
+                    TaskResponseScore = 17.5,
+                    CoherenceScore = 17.5,
+                    LexicalScore = 17.5,
+                    GrammarScore = 17.5,
+                    GeneralFeedback = "Đã hoàn thành bài viết. Vui lòng thử lại để có kết quả chính xác hơn.",
+                    WordCount = studentEssay.Split(new[] { ' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi chấm điểm Writing PREMIUM bằng AI");
+                throw;
+            }
+        }
+
         public async Task<CourseDesignResult> GenerateCourseDesignAsync(string topic, string level)
         {
             try
@@ -440,6 +864,120 @@ Trả về kết quả dạng JSON. Định dạng: {{ ""courseTitle"": ""..."",
                 return responseJson.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "Không thể tạo tư vấn. Vui lòng thử lại.";
             }
             catch (Exception ex) { _logger.LogError(ex, "Lỗi khi tư vấn khóa học bằng AI"); throw; }
+        }
+
+        public async Task<DictionaryResultDto> LookupWordAsync(string word, string fromLang = "EN", string toLang = "VI")
+        {
+            try
+            {
+                var prompt = $@"Bạn là từ điển Anh-Việt chuyên nghiệp. Hãy tra từ ""{word}"" và trả về định dạng JSON:
+
+{{
+  ""word"": ""{word}"",
+  ""partOfSpeech"": ""noun/verb/adjective/adverb/preposition/conjunction/interjection"",
+  ""phonetic"": ""/'pho-ne-tic/"",
+  ""englishDefinition"": ""Định nghĩa tiếng Anh đầy đủ"",
+  ""vietnameseTranslation"": ""Bản dịch tiếng Việt đầy đủ"",
+  ""commonMeaning"": ""Nghĩa phổ thông ngắn gọn bằng tiếng Việt"",
+  ""cefrLevel"": ""A1/A2/B1/B2/C1/C2"",
+  ""examples"": [
+    {{
+      ""englishSentence"": ""Example sentence in English with the word highlighted"",
+      ""vietnameseTranslation"": ""Bản dịch tiếng Việt của câu ví dụ""
+    }}
+  ],
+  ""synonyms"": [""synonym1"", ""synonym2""],
+  ""antonyms"": [""antonym1"", ""antonym2""]
+}}
+
+Yêu cầu:
+- Phonetic phải đúng định dạng IPA
+- CEFR level phải chính xác
+- Examples: ít nhất 2 ví dụ
+- Synonyms và Antonyms: tối đa 5 từ mỗi loại";
+
+                var requestBody = new
+                {
+                    model = "gpt-4o",
+                    messages = new[]
+                    {
+                        new { role = "system", content = "Bạn là từ điển Anh-Việt chuyên nghiệp. Luôn trả về JSON hợp lệ, không có markdown code block." },
+                        new { role = "user", content = prompt }
+                    },
+                    temperature = 0.3
+                };
+
+                var json = JsonSerializer.Serialize(requestBody);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var response = await _httpClient.PostAsync($"{_baseUrl}/chat/completions", content);
+                response.EnsureSuccessStatusCode();
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var responseJson = JsonDocument.Parse(responseContent);
+                var aiContent = responseJson.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+
+                // Loại bỏ markdown code block nếu có
+                aiContent = Regex.Replace(aiContent, @"```json\s*", "", RegexOptions.IgnoreCase);
+                aiContent = Regex.Replace(aiContent, @"```\s*$", "", RegexOptions.IgnoreCase);
+                aiContent = aiContent.Trim();
+
+                var result = JsonSerializer.Deserialize<DictionaryResultDto>(aiContent, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (result == null)
+                {
+                    throw new InvalidOperationException("Không thể parse kết quả từ AI");
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi tra từ điển bằng AI");
+                throw;
+            }
+        }
+
+        public async Task<WordOfTheDayDto> GetWordOfTheDayAsync()
+        {
+            try
+            {
+                // Lấy từ ngẫu nhiên dựa trên ngày hiện tại để đảm bảo cùng một từ trong ngày
+                var seed = DateTime.UtcNow.Date.GetHashCode();
+                var random = new Random(seed);
+                
+                // Danh sách từ phổ biến để chọn
+                var commonWords = new[]
+                {
+                    "package", "develop", "achieve", "benefit", "challenge", "opportunity",
+                    "experience", "improve", "success", "knowledge", "education", "communication",
+                    "technology", "environment", "society", "culture", "tradition", "innovation"
+                };
+
+                var word = commonWords[random.Next(commonWords.Length)];
+
+                var result = await LookupWordAsync(word);
+                
+                return new WordOfTheDayDto
+                {
+                    Word = result.Word,
+                    Phonetic = result.Phonetic,
+                    Definition = result.CommonMeaning
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lấy Word of the day");
+                // Fallback
+                return new WordOfTheDayDto
+                {
+                    Word = "package",
+                    Phonetic = "/'pæk-1d3/",
+                    Definition = "Một vật hoặc nhóm vật được gói trong giấy, thường để gửi qua bưu điện."
+                };
+            }
         }
     }
 }

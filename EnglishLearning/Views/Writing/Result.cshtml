@@ -6,6 +6,17 @@
     var lesson = ViewBag.Lesson as CommonLib.Entities.Lesson;
     var evaluation = ViewBag.Evaluation as Dictionary<string, object> ?? new Dictionary<string, object>();
     
+    // Check Premium status
+    bool isPremium = false;
+    if (evaluation.ContainsKey("isPremium"))
+    {
+        var premiumValue = evaluation["isPremium"];
+        if (premiumValue is bool boolValue)
+            isPremium = boolValue;
+        else if (premiumValue is string strValue)
+            bool.TryParse(strValue, out isPremium);
+    }
+    
     // Helper functions
     double GetDoubleValue(string key)
     {
@@ -155,14 +166,22 @@
                         </div>
                     }
 
-                    <!-- Grammar Errors -->
+                    <!-- Grammar Errors - Premium shows detailed, Free shows count only -->
                     @if (grammarErrors.Any())
                     {
                         <div class="card mb-4 border-danger">
-                            <div class="card-header bg-danger text-white">
+                            <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
                                 <h6 class="mb-0">
                                     <i class="bi bi-exclamation-triangle"></i> Lỗi ngữ pháp (@grammarErrors.Count)
                                 </h6>
+                                @if (isPremium)
+                                {
+                                    <span class="badge bg-success">Premium</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Free</span>
+                                }
                             </div>
                             <div class="card-body">
                                 <div class="list-group">
@@ -193,72 +212,103 @@
                         </div>
                     }
 
-                    <!-- Detailed Feedback -->
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header bg-info text-white">
-                                    <h6 class="mb-0">Task Response</h6>
+                    <!-- Detailed Feedback - Premium only or simplified for Free -->
+                    @if (isPremium)
+                    {
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">Task Response</h6>
+                                        <span class="badge bg-success">Premium</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="mb-0">@GetStringValue("taskResponseFeedback")</p>
+                                    </div>
                                 </div>
-                                <div class="card-body">
-                                    <p class="mb-0">@GetStringValue("taskResponseFeedback")</p>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">Coherence & Cohesion</h6>
+                                        <span class="badge bg-success">Premium</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="mb-0">@GetStringValue("coherenceFeedback")</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header bg-success text-white">
-                                    <h6 class="mb-0">Coherence & Cohesion</h6>
-                                </div>
-                                <div class="card-body">
-                                    <p class="mb-0">@GetStringValue("coherenceFeedback")</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header bg-warning text-dark">
-                                    <h6 class="mb-0">Lexical Resource</h6>
-                                </div>
-                                <div class="card-body">
-                                    <p class="mb-2">@GetStringValue("lexicalFeedback")</p>
-                                    @{
-                                        var suggestedVocab = evaluation.ContainsKey("suggestedVocabulary") ? evaluation["suggestedVocabulary"] : null;
-                                        List<string> vocabList = new List<string>();
-                                        if (suggestedVocab is List<object> vocabObj)
-                                        {
-                                            vocabList = vocabObj.Select(v => v.ToString()).ToList();
-                                        }
-                                    }
-                                    @if (vocabList.Any())
-                                    {
-                                        <div class="mt-2">
-                                            <strong>Từ vựng gợi ý:</strong>
-                                            <div class="d-flex flex-wrap gap-2 mt-2">
-                                                @foreach (var word in vocabList)
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">Lexical Resource</h6>
+                                        <span class="badge bg-success">Premium</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="mb-2">@GetStringValue("lexicalFeedback")</p>
+                                        @{
+                                            var suggestedVocab = evaluation.ContainsKey("suggestedVocabulary") ? evaluation["suggestedVocabulary"] : null;
+                                            List<string> vocabList = new List<string>();
+                                            if (suggestedVocab is System.Text.Json.JsonElement jsonElement && jsonElement.ValueKind == System.Text.Json.JsonValueKind.Array)
+                                            {
+                                                foreach (var item in jsonElement.EnumerateArray())
                                                 {
-                                                    <span class="badge bg-primary">@word</span>
+                                                    vocabList.Add(item.GetString() ?? "");
                                                 }
+                                            }
+                                            else if (suggestedVocab is List<object> vocabObj)
+                                            {
+                                                vocabList = vocabObj.Select(v => v.ToString()).ToList();
+                                            }
+                                        }
+                                        @if (vocabList.Any())
+                                        {
+                                            <div class="mt-2">
+                                                <strong>Từ vựng gợi ý:</strong>
+                                                <div class="d-flex flex-wrap gap-2 mt-2">
+                                                    @foreach (var word in vocabList)
+                                                    {
+                                                        <span class="badge bg-primary">@word</span>
+                                                    }
+                                                </div>
                                             </div>
-                                        </div>
-                                    }
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">Grammar</h6>
+                                        <span class="badge bg-success">Premium</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="mb-0">@GetStringValue("grammarFeedback")</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header bg-danger text-white">
-                                    <h6 class="mb-0">Grammar</h6>
+                    }
+                    else
+                    {
+                        <!-- Free user: Simplified feedback -->
+                        <div class="alert alert-info">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="alert-heading">
+                                        <i class="bi bi-lock"></i> Bạn đang xem phiên bản Free
+                                    </h6>
+                                    <p class="mb-0">Nâng cấp Premium để nhận phân tích chi tiết theo từng tiêu chí IELTS!</p>
                                 </div>
-                                <div class="card-body">
-                                    <p class="mb-0">@GetStringValue("grammarFeedback")</p>
-                                </div>
+                                <a href="/Courses" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-star"></i> Nâng cấp
+                                </a>
                             </div>
                         </div>
-                    </div>
+                    }
 
                     <!-- Tone Feedback -->
                     @{
@@ -283,14 +333,42 @@
                     @if (!string.IsNullOrEmpty(generalFeedback))
                     {
                         <div class="card mb-4 border-info">
-                            <div class="card-header bg-info text-white">
+                            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
                                 <h6 class="mb-0">
                                     <i class="bi bi-chat-dots"></i> Phản hồi tổng quan từ AI
                                 </h6>
+                                @if (isPremium)
+                                {
+                                    <span class="badge bg-success">Premium</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Free</span>
+                                }
                             </div>
                             <div class="card-body">
                                 <p class="mb-0">@generalFeedback</p>
                             </div>
+                        </div>
+                    }
+
+                    @if (!isPremium)
+                    {
+                        <!-- Free user upgrade prompt -->
+                        <div class="alert alert-warning">
+                            <h6 class="alert-heading">
+                                <i class="bi bi-lock"></i> Nâng cấp Premium để nhận phân tích chi tiết hơn!
+                            </h6>
+                            <p class="mb-2">Với Premium, bạn sẽ nhận được:</p>
+                            <ul class="mb-2">
+                                <li>Phân tích chi tiết theo 4 tiêu chí IELTS (Task Response, Coherence, Lexical Resource, Grammar)</li>
+                                <li>Danh sách từ vựng học thuật gợi ý</li>
+                                <li>Giải thích chi tiết từng lỗi ngữ pháp với cách sửa</li>
+                                <li>Đánh giá về Tone và văn phong</li>
+                            </ul>
+                            <a href="/Courses" class="btn btn-primary btn-sm">
+                                <i class="bi bi-star"></i> Nâng cấp ngay
+                            </a>
                         </div>
                     }
 

@@ -1,0 +1,481 @@
+@model CommonLib.DTOs.DictionaryResultDto
+@{
+    ViewData["Title"] = $"Từ điển - {Model.Word}";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<style>
+    .dictionary-detail-container {
+        background: white;
+        min-height: calc(100vh - 80px);
+        padding: 40px 20px;
+    }
+
+    .search-bar-area {
+        background: linear-gradient(135deg, #4A90E2 0%, #2E5C8A 100%);
+        padding: 30px 20px;
+        margin-bottom: 30px;
+    }
+
+    .search-bar-inline {
+        max-width: 1000px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        background: white;
+        border-radius: 12px;
+        padding: 10px;
+    }
+
+    .lang-toggle-inline {
+        background: #f0f7ff;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-weight: 600;
+        color: #2E5C8A;
+    }
+
+    .search-input-inline {
+        flex: 1;
+        border: none;
+        outline: none;
+        padding: 12px 15px;
+        font-size: 1rem;
+    }
+
+    .search-btn-inline {
+        background: #4A90E2;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 24px;
+        font-weight: 600;
+    }
+
+    .content-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 30px;
+    }
+
+    .sidebar-ad {
+        background: linear-gradient(135deg, #2E5C8A 0%, #4A90E2 100%);
+        border-radius: 20px;
+        padding: 30px;
+        color: white;
+        text-align: center;
+        position: sticky;
+        top: 20px;
+        height: fit-content;
+    }
+
+    .ad-robot {
+        font-size: 4rem;
+        margin-bottom: 20px;
+    }
+
+    .ad-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+    }
+
+    .ad-description {
+        font-size: 1rem;
+        margin-bottom: 25px;
+        opacity: 0.95;
+    }
+
+    .ad-btn {
+        background: white;
+        color: #2E5C8A;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 30px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .ad-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .dictionary-entry {
+        background: white;
+        border-radius: 12px;
+        padding: 40px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 30px;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    .tab {
+        padding: 12px 24px;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        font-weight: 600;
+        color: #6c757d;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .tab.active {
+        color: #2E5C8A;
+        border-bottom-color: #2E5C8A;
+    }
+
+    .word-header {
+        margin-bottom: 25px;
+    }
+
+    .word-title {
+        font-size: 3rem;
+        font-weight: 700;
+        color: #2E5C8A;
+        margin-bottom: 15px;
+    }
+
+    .part-of-speech {
+        display: inline-block;
+        background: #e7f3ff;
+        color: #2E5C8A;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+    }
+
+    .pronunciation-row {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .flag-icon {
+        width: 24px;
+        height: 18px;
+    }
+
+    .phonetic {
+        font-size: 1.2rem;
+        color: #495057;
+        font-family: 'Courier New', monospace;
+    }
+
+    .audio-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #4A90E2;
+        cursor: pointer;
+        padding: 5px;
+    }
+
+    .cefr-badge {
+        background: #495057;
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .definition-section {
+        margin-bottom: 30px;
+    }
+
+    .definition-text {
+        font-size: 1.1rem;
+        line-height: 1.8;
+        color: #212529;
+        margin-bottom: 15px;
+    }
+
+    .vietnamese-translation {
+        font-size: 1rem;
+        line-height: 1.8;
+        color: #6c757d;
+        font-style: italic;
+        margin-bottom: 20px;
+    }
+
+    .common-meaning {
+        background: #f8f9fa;
+        padding: 15px 20px;
+        border-radius: 8px;
+        border-left: 4px solid #4A90E2;
+        margin-bottom: 25px;
+    }
+
+    .common-meaning-label {
+        font-weight: 600;
+        color: #2E5C8A;
+        margin-bottom: 8px;
+    }
+
+    .examples-section {
+        margin-top: 30px;
+    }
+
+    .example-item {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+
+    .example-english {
+        font-size: 1rem;
+        line-height: 1.8;
+        color: #212529;
+        margin-bottom: 10px;
+    }
+
+    .example-english .highlight {
+        color: #ff6b35;
+        font-weight: 600;
+    }
+
+    .example-vietnamese {
+        font-size: 0.95rem;
+        color: #6c757d;
+        font-style: italic;
+    }
+
+    .synonyms-antonyms {
+        margin-top: 30px;
+        padding-top: 30px;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .syn-ant-section {
+        margin-bottom: 20px;
+    }
+
+    .syn-ant-label {
+        font-weight: 600;
+        color: #2E5C8A;
+        margin-bottom: 10px;
+    }
+
+    .syn-ant-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .syn-ant-tag {
+        background: #e7f3ff;
+        color: #2E5C8A;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .syn-ant-tag:hover {
+        background: #4A90E2;
+        color: white;
+    }
+
+    .see-more-link {
+        color: #4A90E2;
+        text-decoration: none;
+        font-weight: 600;
+        margin-top: 20px;
+        display: inline-block;
+    }
+
+    .see-more-link:hover {
+        text-decoration: underline;
+    }
+
+    @media (max-width: 968px) {
+        .content-wrapper {
+            grid-template-columns: 1fr;
+        }
+        
+        .sidebar-ad {
+            position: relative;
+        }
+    }
+</style>
+
+<div class="dictionary-detail-container">
+    <div class="search-bar-area">
+        <form method="post" action="@Url.Action("Search")" class="search-bar-inline">
+            <button type="button" class="lang-toggle-inline">EN - VI</button>
+            <input type="text" name="word" class="search-input-inline" value="@Model.Word" placeholder="Bạn muốn tra từ gì?" required />
+            <input type="hidden" name="fromLang" value="EN" />
+            <input type="hidden" name="toLang" value="VI" />
+            <button type="submit" class="search-btn-inline">
+                <i class="bi bi-search"></i> Tìm kiếm
+            </button>
+            <button type="button" class="btn btn-light" onclick="clearSearch()" style="border-radius: 8px;">
+                <i class="bi bi-x"></i>
+            </button>
+        </form>
+    </div>
+
+    <div class="content-wrapper">
+        <!-- Sidebar Ad -->
+        <div class="sidebar-ad">
+            <div class="ad-robot">🤖</div>
+            <div class="ad-title">EnglishLearning Adaptive Testing</div>
+            <div class="ad-description">
+                Chỉ với 20 phút biết ngay trình độ tiếng Anh của bạn!
+            </div>
+            <a href="/Home/Dashboard" class="ad-btn">Thử ngay</a>
+        </div>
+
+        <!-- Dictionary Entry -->
+        <div class="dictionary-entry">
+            <div class="tabs">
+                <button class="tab active">Definitions</button>
+                <button class="tab">Form and inflection</button>
+            </div>
+
+            <div class="word-header">
+                <h1 class="word-title">@Model.Word</h1>
+                @if (!string.IsNullOrEmpty(Model.PartOfSpeech))
+                {
+                    <span class="part-of-speech">(@Model.PartOfSpeech)</span>
+                }
+            </div>
+
+            <div class="pronunciation-row">
+                <img src="https://flagcdn.com/w40/us.png" alt="US" class="flag-icon" />
+                <span class="phonetic">@Model.Phonetic</span>
+                <button class="audio-btn" onclick="playPronunciation('@Model.Word')">
+                    <i class="bi bi-volume-up-fill"></i>
+                </button>
+                <button class="audio-btn" onclick="recordPronunciation()">
+                    <i class="bi bi-mic-fill"></i>
+                </button>
+                @if (!string.IsNullOrEmpty(Model.CefrLevel))
+                {
+                    <span class="cefr-badge">@Model.CefrLevel</span>
+                }
+            </div>
+
+            <div class="definition-section">
+                @if (!string.IsNullOrEmpty(Model.EnglishDefinition))
+                {
+                    <div class="definition-text">@Model.EnglishDefinition</div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.VietnameseTranslation))
+                {
+                    <div class="vietnamese-translation">@Model.VietnameseTranslation</div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.CommonMeaning))
+                {
+                    <div class="common-meaning">
+                        <div class="common-meaning-label">
+                            <i class="bi bi-arrow-right"></i> Nghĩa phổ thông:
+                        </div>
+                        <div>@Model.CommonMeaning</div>
+                    </div>
+                }
+            </div>
+
+            @if (Model.Examples != null && Model.Examples.Any())
+            {
+                <div class="examples-section">
+                    <h5 style="color: #2E5C8A; margin-bottom: 20px;">
+                        <i class="bi bi-info-circle"></i> Ví dụ
+                    </h5>
+                    @foreach (var example in Model.Examples)
+                    {
+                        <div class="example-item">
+                            <div class="example-english">
+                                @Html.Raw(example.EnglishSentence.Replace(Model.Word, $"<span class='highlight'>{Model.Word}</span>"))
+                            </div>
+                            <div class="example-vietnamese">@example.VietnameseTranslation</div>
+                            <div style="margin-top: 10px;">
+                                <button class="audio-btn" onclick="playPronunciation('@example.EnglishSentence')">
+                                    <i class="bi bi-volume-up"></i>
+                                </button>
+                                <button class="audio-btn" onclick="recordPronunciation()">
+                                    <i class="bi bi-mic"></i>
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if ((Model.Synonyms != null && Model.Synonyms.Any()) || (Model.Antonyms != null && Model.Antonyms.Any()))
+            {
+                <div class="synonyms-antonyms">
+                    @if (Model.Synonyms != null && Model.Synonyms.Any())
+                    {
+                        <div class="syn-ant-section">
+                            <div class="syn-ant-label">Từ đồng nghĩa:</div>
+                            <div class="syn-ant-tags">
+                                @foreach (var synonym in Model.Synonyms)
+                                {
+                                    <span class="syn-ant-tag" onclick="searchWord('@synonym')">@synonym</span>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (Model.Antonyms != null && Model.Antonyms.Any())
+                    {
+                        <div class="syn-ant-section">
+                            <div class="syn-ant-label">Từ trái nghĩa:</div>
+                            <div class="syn-ant-tags">
+                                @foreach (var antonym in Model.Antonyms)
+                                {
+                                    <span class="syn-ant-tag" onclick="searchWord('@antonym')">@antonym</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            <a href="#" class="see-more-link">+ Xem thêm</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    function searchWord(word) {
+        window.location.href = '@Url.Action("Detail")?word=' + encodeURIComponent(word);
+    }
+
+    function playPronunciation(text) {
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    function recordPronunciation() {
+        alert('Tính năng ghi âm sẽ được tích hợp sau.');
+    }
+
+    function clearSearch() {
+        window.location.href = '@Url.Action("Index")';
+    }
+</script>
