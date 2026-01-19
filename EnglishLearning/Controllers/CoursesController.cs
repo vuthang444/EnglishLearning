@@ -53,7 +53,7 @@ namespace EnglishLearning.Controllers
         [HttpPost]
         [Route("Courses/Checkout/{id}")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Checkout(int id)
+        public async Task<IActionResult> Checkout(int id, string paymentMethod = "payWithATM")
         {
             var userId = GetUserId();
             if (!userId.HasValue) { TempData["ErrorMessage"] = "Vui lòng đăng nhập."; return RedirectToAction("Index", "Home"); }
@@ -68,6 +68,13 @@ namespace EnglishLearning.Controllers
             var amountVnd = (long)Math.Round((double)(course.PriceUSD * rate));
 
             if (amountVnd <= 0) { TempData["ErrorMessage"] = "Khóa học chưa có giá."; return RedirectToAction("Detail", new { id }); }
+
+            // Validate paymentMethod
+            if (string.IsNullOrEmpty(paymentMethod) ||
+                (paymentMethod != "payWithATM" && paymentMethod != "payWithCC" && paymentMethod != "captureWallet"))
+            {
+                paymentMethod = "payWithATM";
+            }
 
             var order = new Order
             {
@@ -88,7 +95,7 @@ namespace EnglishLearning.Controllers
             if (string.IsNullOrEmpty(ipnUrl)) ipnUrl = baseUrl + "/Payment/MoMoIpn";
 
             var orderInfo = "Thanh toan khoa hoc " + course.Title;
-            var (ok, payUrl, msg) = await _momo.CreatePaymentAsync(order.MomoOrderId!, order.MomoRequestId!, amountVnd, orderInfo, returnUrl, ipnUrl);
+            var (ok, payUrl, msg) = await _momo.CreatePaymentAsync(order.MomoOrderId!, order.MomoRequestId!, amountVnd, orderInfo, returnUrl, ipnUrl, paymentMethod);
 
             if (ok && !string.IsNullOrEmpty(payUrl))
                 return Redirect(payUrl);

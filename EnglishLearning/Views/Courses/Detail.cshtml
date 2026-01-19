@@ -30,7 +30,17 @@
         {
             <form method="post" action="/Courses/Checkout/@Model.Id" class="d-inline">
                 @Html.AntiForgeryToken()
-                <button type="submit" class="btn btn-success"><i class="bi bi-wallet2"></i> Mua ngay (MoMo)</button>
+                <div class="mb-3">
+                    <label for="paymentMethod" class="form-label">Chọn phương thức thanh toán:</label>
+                    <select name="paymentMethod" id="paymentMethod" class="form-select d-inline-block" style="width: auto; margin-right: 10px;">
+                        <option value="payWithATM" selected>Thẻ ATM (MoMo Test)</option>
+                        <option value="payWithCC">Thẻ tín dụng/Ghi nợ (MoMo Test)</option>
+                        <option value="captureWallet">Ví MoMo</option>
+                    </select>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-credit-card"></i> Mua ngay
+                    </button>
+                </div>
             </form>
         }
         else

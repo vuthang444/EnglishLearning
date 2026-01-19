@@ -18,20 +18,18 @@ namespace EnglishLearning.Services
             _logger = logger;
         }
 
-        public async Task<(bool ok, string? payUrl, string? message)> CreatePaymentAsync(string orderId, string requestId, long amountVnd, string orderInfo, string returnUrl, string ipnUrl)
+        public async Task<(bool ok, string? payUrl, string? message)> CreatePaymentAsync(string orderId, string requestId, long amountVnd, string orderInfo, string returnUrl, string ipnUrl, string paymentMethod = "captureWallet")
         {
-            var partnerCode = _config["MoMo:PartnerCode"];
-            var accessKey = _config["MoMo:AccessKey"];
-            var secretKey = _config["MoMo:SecretKey"];
+            // Lấy từ appsettings; nếu không có, dùng bộ test mặc định của MoMo demo
+            var partnerCode = _config["MoMo:PartnerCode"] ?? "MOMOBKUN20180529";
+            var accessKey = _config["MoMo:AccessKey"] ?? "klm05TvNBzhg7h7j";
+            var secretKey = _config["MoMo:SecretKey"] ?? "at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa";
             var baseUrl = _config["MoMo:BaseUrl"] ?? "https://test-payment.momo.vn";
 
-            if (string.IsNullOrEmpty(partnerCode) || string.IsNullOrEmpty(accessKey) || string.IsNullOrEmpty(secretKey))
-            {
-                _logger.LogWarning("MoMo chưa cấu hình PartnerCode/AccessKey/SecretKey");
-                return (false, null, "Chưa cấu hình cổng thanh toán MoMo.");
-            }
+            // Nếu dùng demo keys, không cần cảnh báo thiếu cấu hình
 
-            var requestType = "captureWallet";
+            // paymentMethod: "captureWallet" (ví MoMo), "payWithATM" (thẻ ATM), "payWithCC" (thẻ tín dụng/ghi nợ)
+            var requestType = paymentMethod;
             var lang = "vi";
             var extraData = "";
 
