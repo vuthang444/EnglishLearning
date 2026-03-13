@@ -20,3 +20,47 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+/* Mục 6: Mobile & Accessibility - Làm bài tập */
+@media (max-width: 767.98px) {
+  .practice-card .btn,
+  .practice-card .card-footer .btn {
+    min-height: 44px;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  .practice-card .card-body {
+    padding: 1rem;
+  }
+  .practice-card .card-footer {
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Nút làm bài / nộp bài trên mobile - đủ lớn để bấm */
+@media (max-width: 767.98px) {
+  #btnSubmit.btn-primary,
+  #btnSubmit.btn-success,
+  #submitBtn.btn-primary,
+  button[onclick="submitAnswers()"] {
+    min-height: 44px;
+    padding: 0.6rem 1rem;
+  }
+  #btnRecord.btn-danger, #btnStop.btn-secondary, #btnPlay.btn-info {
+    min-height: 44px;
+  }
+}
+
+/* Timer / word count rõ trên mobile */
+.practice-timer,
+.practice-wordcount {
+  font-size: 0.95rem;
+}
+@media (max-width: 767.98px) {
+  .practice-timer,
+  .practice-wordcount,
+  #wordCount.badge,
+  #timer {
+    font-size: 1rem;
+  }
+}

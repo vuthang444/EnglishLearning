@@ -56,6 +56,39 @@ namespace DataServiceLib.Repositories
             return await _context.Users
                 .AnyAsync(u => u.Username == username || u.Email == email);
         }
+
+        public async Task<List<User>> GetAllAsync()
+        {
+            return await _context.Users
+                .Include(u => u.Role)
+                .OrderBy(u => u.Id)
+                .ToListAsync();
+        }
+
+        public async Task<User> UpdateAsync(User user)
+        {
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+            return await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Id == user.Id) ?? user;
+        }
+
+        public async Task<int> CountAsync()
+        {
+            return await _context.Users.CountAsync();
+        }
+
+        public async Task<bool> DeleteAsync(int id)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+                return false;
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }
 

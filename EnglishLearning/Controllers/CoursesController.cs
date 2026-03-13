@@ -11,14 +11,16 @@ namespace EnglishLearning.Controllers
         private readonly ICourseRepository _courseRepo;
         private readonly IOrderRepository _orderRepo;
         private readonly IMoMoService _momo;
+        private readonly IVnPayService _vnPay;
         private readonly IConfiguration _config;
         private readonly ILogger<CoursesController> _logger;
 
-        public CoursesController(ICourseRepository courseRepo, IOrderRepository orderRepo, IMoMoService momo, IConfiguration config, ILogger<CoursesController> logger)
+        public CoursesController(ICourseRepository courseRepo, IOrderRepository orderRepo, IMoMoService momo, IVnPayService vnPay, IConfiguration config, ILogger<CoursesController> logger)
         {
             _courseRepo = courseRepo;
             _orderRepo = orderRepo;
             _momo = momo;
+            _vnPay = vnPay;
             _config = config;
             _logger = logger;
         }
@@ -64,29 +66,73 @@ namespace EnglishLearning.Controllers
             var already = await _orderRepo.GetPaidByUserAndCourseAsync(userId.Value, id);
             if (already.Any()) { TempData["InfoMessage"] = "Bạn đã sở hữu khóa học này."; return RedirectToAction("MyCourses"); }
 
-            var rate = _config.GetValue<decimal>("ExchangeRateUsdToVnd", 25000);
-            var amountVnd = (long)Math.Round((double)(course.PriceUSD * rate));
+            // Giá khóa học hiện đang được lưu trực tiếp bằng VND trong thuộc tính PriceUSD
+            var amountVnd = (long)Math.Round((double)course.PriceUSD);
 
             if (amountVnd <= 0) { TempData["ErrorMessage"] = "Khóa học chưa có giá."; return RedirectToAction("Detail", new { id }); }
 
-            // Validate paymentMethod
+            // Thanh toán tiền mặt: tạo đơn với trạng thái Paid, người dùng được dùng khóa học ngay
+            if (paymentMethod == "cash")
+            {
+                var order = new Order
+                {
+                    UserId = userId.Value,
+                    CourseId = id,
+                    Amount = amountVnd,
+                    Status = "Paid"
+                };
+                order = await _orderRepo.CreateAsync(order);
+                TempData["SuccessMessage"] = $"Đã đăng ký thành công (thanh toán tiền mặt). Mã đơn: #{order.Id}. Bạn có thể xem khóa học tại \"Khóa học của tôi\".";
+                return RedirectToAction("MyCourses");
+            }
+
+            // Thanh toán VNPay
+            if (paymentMethod == "vnpay")
+            {
+                var vnpayOrder = new Order
+                {
+                    UserId = userId.Value,
+                    CourseId = id,
+                    Amount = amountVnd,
+                    Status = "Pending"
+                };
+                vnpayOrder = await _orderRepo.CreateAsync(vnpayOrder);
+                vnpayOrder.MomoOrderId = "EL" + vnpayOrder.Id;
+                await _orderRepo.UpdateAsync(vnpayOrder);
+
+                var vnpayBaseUrl = $"{Request.Scheme}://{Request.Host}";
+                var vnpayReturnUrl = _config["Vnpay:PaymentBackReturnUrl"]?.Trim();
+                if (string.IsNullOrEmpty(vnpayReturnUrl)) vnpayReturnUrl = vnpayBaseUrl + "/Payment/VnPayReturn";
+
+                var vnpayOrderInfo = "Thanh toan khoa hoc " + course.Title;
+                var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+                var vnpayPayUrl = _vnPay.CreatePaymentUrl(vnpayOrder.MomoOrderId!, amountVnd, vnpayOrderInfo, vnpayReturnUrl, clientIp);
+
+                if (!string.IsNullOrEmpty(vnpayPayUrl))
+                    return Redirect(vnpayPayUrl);
+
+                TempData["ErrorMessage"] = "Không tạo được link thanh toán VNPay.";
+                return RedirectToAction("Detail", new { id });
+            }
+
+            // Validate paymentMethod (MoMo)
             if (string.IsNullOrEmpty(paymentMethod) ||
                 (paymentMethod != "payWithATM" && paymentMethod != "payWithCC" && paymentMethod != "captureWallet"))
             {
                 paymentMethod = "payWithATM";
             }
 
-            var order = new Order
+            var momoOrder = new Order
             {
                 UserId = userId.Value,
                 CourseId = id,
                 Amount = amountVnd,
                 Status = "Pending"
             };
-            order = await _orderRepo.CreateAsync(order);
-            order.MomoOrderId = "EL" + order.Id;
-            order.MomoRequestId = Guid.NewGuid().ToString();
-            await _orderRepo.UpdateAsync(order);
+            momoOrder = await _orderRepo.CreateAsync(momoOrder);
+            momoOrder.MomoOrderId = "EL" + momoOrder.Id;
+            momoOrder.MomoRequestId = Guid.NewGuid().ToString();
+            await _orderRepo.UpdateAsync(momoOrder);
 
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
             var returnUrl = _config["MoMo:ReturnUrl"]?.Trim();
@@ -95,7 +141,7 @@ namespace EnglishLearning.Controllers
             if (string.IsNullOrEmpty(ipnUrl)) ipnUrl = baseUrl + "/Payment/MoMoIpn";
 
             var orderInfo = "Thanh toan khoa hoc " + course.Title;
-            var (ok, payUrl, msg) = await _momo.CreatePaymentAsync(order.MomoOrderId!, order.MomoRequestId!, amountVnd, orderInfo, returnUrl, ipnUrl, paymentMethod);
+            var (ok, payUrl, msg) = await _momo.CreatePaymentAsync(momoOrder.MomoOrderId!, momoOrder.MomoRequestId!, amountVnd, orderInfo, returnUrl, ipnUrl, paymentMethod);
 
             if (ok && !string.IsNullOrEmpty(payUrl))
                 return Redirect(payUrl);

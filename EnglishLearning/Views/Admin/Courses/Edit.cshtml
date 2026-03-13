@@ -1,0 +1,106 @@
+@model CommonLib.Entities.Course
+@{
+    ViewData["Title"] = "Sửa khóa học";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+<div class="main-content">
+    <h2 class="mb-3">Sửa khóa học</h2>
+    <p class="text-muted">Cập nhật thông tin khóa học</p>
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">@TempData["ErrorMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+    <form id="frmEdit" method="post" action="/Admin/Courses/Edit/@Model.Id" class="needs-validation">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.Id" />
+        <div class="row mb-3">
+            <div class="col-md-5">
+                <label class="form-label">Chủ đề <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="Topic" id="Topic" required value="@Model.Topic" placeholder="VD: Business English, IELTS Writing" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Trình độ</label>
+                <select class="form-select" name="Level" id="Level">
+                    @{
+                        var levels = new[] { "A1", "A2", "B1", "B2", "C1", "C2" };
+                    }
+                    @foreach (var level in levels)
+                    {
+                        if (Model.Level == level)
+                        {
+                            <option value="@level" selected>@level</option>
+                        }
+                        else
+                        {
+                            <option value="@level">@level</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="button" id="btnAi" class="btn btn-outline-primary"><i class="bi bi-stars"></i> AI thiết kế lại</button>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Tiêu đề khóa học <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="Title" id="Title" required value="@Model.Title" placeholder="Sẽ được điền bởi AI hoặc nhập tay" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Target Audience</label>
+            <textarea class="form-control" name="TargetAudience" id="TargetAudience" rows="2" placeholder="Sẽ được điền bởi AI">@Model.TargetAudience</textarea>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Marketing Copy (khoảng 200 từ)</label>
+            <textarea class="form-control" name="MarketingCopy" id="MarketingCopy" rows="5" placeholder="Sẽ được điền bởi AI">@Model.MarketingCopy</textarea>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Giá (VND)</label>
+                <input type="number" class="form-control" name="PriceUSD" id="PriceUSD" step="1000" min="0" value="@Model.PriceUSD" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Trạng thái</label>
+                <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" name="IsActive" id="IsActive" value="true" @(Model.IsActive ? "checked" : "") />
+                    <label class="form-check-label" for="IsActive">
+                        Hoạt động
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Lưu thay đổi</button>
+            <a href="/Admin/Courses" class="btn btn-secondary">Hủy</a>
+        </div>
+    </form>
+</div>
+<script>
+document.getElementById('btnAi').addEventListener('click', async function(){
+    var topic = document.getElementById('Topic').value.trim();
+    if (!topic) { alert('Vui lòng nhập Chủ đề.'); return; }
+    var level = document.getElementById('Level').value || 'B2';
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang tạo...';
+    try {
+        var res = await fetch('/Admin/Courses/GenerateDesign', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ Topic: topic, Level: level })
+        });
+        var json = await res.json();
+        if (json.success && json.data) {
+            var d = json.data;
+            document.getElementById('Title').value = d.courseTitle || '';
+            document.getElementById('TargetAudience').value = d.targetAudience || '';
+            document.getElementById('MarketingCopy').value = d.marketingCopy || '';
+            // Giá sẽ do admin nhập thủ công bằng VND
+        } else {
+            alert(json.message || 'Không thể tạo thiết kế.');
+        }
+    } catch (e) {
+        alert('Lỗi: ' + e.message);
+    }
+    this.disabled = false;
+    this.innerHTML = '<i class="bi bi-stars"></i> AI thiết kế lại';
+});
+</script>

@@ -1,0 +1,95 @@
+@model List<CommonLib.Entities.News>
+@{
+    ViewData["Title"] = "Quản lý Tin tức";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Quản lý Tin tức</h2>
+        <a href="@Url.Action("Create")" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Tạo bài tin tức mới
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tiêu đề</th>
+                        <th>Chủ đề</th>
+                        <th>Trình độ</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var news in Model)
+                    {
+                        <tr>
+                            <td>@news.Id</td>
+                            <td>
+                                <strong>@news.Title</strong>
+                                @if (!string.IsNullOrEmpty(news.MetaDescription))
+                                {
+                                    <br />
+                                    <small class="text-muted">@news.MetaDescription</small>
+                                }
+                            </td>
+                            <td>@(news.Topic ?? "N/A")</td>
+                            <td>
+                                <span class="badge bg-info">@news.Level</span>
+                            </td>
+                            <td>
+                                @if (news.IsPublished)
+                                {
+                                    <span class="badge bg-success">Đã xuất bản</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning">Bản nháp</span>
+                                }
+                                @if (news.IsFreePreview)
+                                {
+                                    <br />
+                                    <span class="badge bg-secondary mt-1">Free Preview</span>
+                                }
+                            </td>
+                            <td>@news.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                <a href="@Url.Action("Edit", new { id = news.Id })" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-pencil"></i> Sửa
+                                </a>
+                                <form method="post" action="/Admin/News/Delete/@news.Id" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa bài tin tức này?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="bi bi-trash"></i> Xóa
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,6 +1,6 @@
 @{
     ViewData["Title"] = "Từ điển";
-    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    Layout = "~/Views/Shared/_Layout.cshtml";
     
     var wordOfTheDay = ViewBag.WordOfTheDay as CommonLib.DTOs.WordOfTheDayDto;
 }
@@ -47,7 +47,7 @@
         animation: sparkle 2s infinite;
     }
 
-    @keyframes sparkle {
+    @@keyframes sparkle {
         0%, 100% { opacity: 0.3; transform: scale(1); }
         50% { opacity: 0.8; transform: scale(1.2); }
     }
@@ -237,7 +237,7 @@
         color: rgba(255, 255, 255, 0.7);
     }
 
-    @media (max-width: 768px) {
+    @@media (max-width: 768px) {
         .cards-container {
             grid-template-columns: 1fr;
         }

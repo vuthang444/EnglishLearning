@@ -73,7 +73,7 @@ namespace CommonLib.Services
         {
             var user = await _userRepository.GetByUsernameOrEmailAsync(loginDto.UsernameOrEmail);
             
-            if (user == null || !user.IsActive)
+            if (user == null)
             {
                 return null;
             }
@@ -118,7 +118,7 @@ namespace CommonLib.Services
             }
 
             var user = await _userRepository.GetByIdAsync(userId);
-            return user != null && user.IsActive;
+            return user != null;
         }
     }
 }

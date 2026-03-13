@@ -1,0 +1,171 @@
+@model List<CommonLib.Entities.News>
+@{
+    ViewData["Title"] = "Tin tức";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    
+    var isPremium = ViewBag.IsPremium as bool? ?? false;
+}
+
+<style>
+    .news-container {
+        padding: 20px;
+    }
+
+    .news-header {
+        margin-bottom: 30px;
+    }
+
+    .news-header h1 {
+        color: #2E5C8A;
+        font-weight: 700;
+    }
+
+    .news-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+        cursor: pointer;
+    }
+
+    .news-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    }
+
+    .news-title {
+        color: #2E5C8A;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .news-meta {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+    }
+
+    .news-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .news-description {
+        color: #495057;
+        line-height: 1.6;
+        margin-bottom: 15px;
+    }
+
+    .news-preview {
+        color: #6c757d;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    .badge-level {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .badge-beginner {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .badge-intermediate {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .badge-advanced {
+        background: #f8d7da;
+        color: #721c24;
+    }
+</style>
+
+<div class="news-container">
+    <div class="news-header">
+        <h1><i class="bi bi-newspaper"></i> Tin tức</h1>
+        <p class="text-muted">Đọc tin tức tiếng Anh để cải thiện kỹ năng đọc hiểu của bạn</p>
+        @if (!isPremium)
+        {
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> Bạn đang xem các bài tin tức miễn phí. 
+                <a href="/Courses" class="alert-link">Nâng cấp Premium</a> để xem tất cả bài tin và sử dụng tính năng AI Summary & Grammar Explanation!
+            </div>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> Chưa có bài tin tức nào được xuất bản.
+        </div>
+    }
+    else
+    {
+        @foreach (var news in Model)
+        {
+            <div class="news-card" onclick="window.location.href='@Url.Action("Detail", "News", new { id = news.Id })'">
+                @if (!string.IsNullOrEmpty(news.FeaturedImagePath))
+                {
+                    <div class="news-card-image mb-3">
+                        <img src="@news.FeaturedImagePath" alt="@news.Title" class="img-fluid rounded" style="width: 100%; max-height: 220px; object-fit: cover;" />
+                    </div>
+                }
+                <h3 class="news-title">@news.Title</h3>
+                
+                <div class="news-meta">
+                    <span class="news-meta-item">
+                        <i class="bi bi-calendar"></i>
+                        @(news.PublishedAt?.ToString("dd/MM/yyyy") ?? news.CreatedAt.ToString("dd/MM/yyyy"))
+                    </span>
+                    <span class="news-meta-item">
+                        <i class="bi bi-tag"></i>
+                        @(news.Topic ?? "General")
+                    </span>
+                    <span class="badge badge-level badge-@news.Level.ToLower()">
+                        @news.Level
+                    </span>
+                    @if (news.IsFreePreview)
+                    {
+                        <span class="badge bg-secondary">Free</span>
+                    }
+                    @if (!news.IsFreePreview && isPremium)
+                    {
+                        <span class="badge bg-success">Premium</span>
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(news.MetaDescription))
+                {
+                    <p class="news-description">@news.MetaDescription</p>
+                }
+
+                <div class="news-preview">
+                    @{
+                        var preview = news.Content.Length > 200 
+                            ? news.Content.Substring(0, 200) + "..." 
+                            : news.Content;
+                    }
+                    @preview
+                </div>
+
+                <div class="mt-3">
+                    <a href="@Url.Action("Detail", "News", new { id = news.Id })" class="btn btn-outline-primary btn-sm">
+                        Đọc tiếp <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        }
+    }
+</div>

@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = "Bảng điều khiển học tập";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
     
     var latestLesson = ViewBag.LatestLesson as CommonLib.Entities.Lesson;
@@ -465,12 +465,12 @@
         <!-- Learning Profile -->
         <div class="learning-profile-card">
             <div class="profile-header">
-                <h5 style="margin: 0; color: #2E5C8A; font-weight: 600;">Learning Profile</h5>
-                <a href="/Courses">Xem tất cả</a>
+                <h5 style="margin: 0; color: #2E5C8A; font-weight: 600;">Hồ sơ học tập</h5>
+                <a href="/Courses">Xem tất cả khóa học</a>
             </div>
             <div>
                 <h6 style="color: #6c757d; font-size: 0.9rem; margin-bottom: 15px;">
-                    Your IELTS Level: <strong style="color: #2E5C8A;">@ViewBag.IeltsLevel</strong>
+                    Trình độ IELTS hiện tại: <strong style="color: #2E5C8A;">@ViewBag.IeltsLevel</strong>
                 </h6>
                 <div class="progress-bar-container">
                     <div class="progress-bar-fill" style="width: @ViewBag.ProgressPercentage%"></div>
@@ -478,11 +478,11 @@
                         <i class="bi bi-bullseye" style="font-size: 0.7rem; color: white;"></i>
                     </div>
                 </div>
-                <div class="progress-labels">
-                    <span>Entry</span>
-                    <span>@ViewBag.IeltsLevel</span>
-                    <span>Target</span>
-                </div>
+                    <div class="progress-labels">
+                        <span>Mới bắt đầu</span>
+                        <span>@ViewBag.IeltsLevel</span>
+                        <span>Mục tiêu</span>
+                    </div>
                 @if (averageScore > 0)
                 {
                     <p class="text-center mt-3 mb-0">
@@ -496,7 +496,7 @@
         @if (ViewBag.Streak != null && (int)ViewBag.Streak > 0)
         {
             <div class="content-card">
-                <h5 class="card-title">🔥 Streak</h5>
+                <h5 class="card-title">🔥 Chuỗi ngày học</h5>
                 <div class="text-center">
                     <h2 style="color: #ff6b35; font-weight: 700; margin: 10px 0;">@ViewBag.Streak</h2>
                     <p class="text-muted mb-0">ngày học liên tiếp</p>
@@ -506,14 +506,14 @@
 
         <!-- Learning Summary -->
         <div class="content-card">
-            <h5 class="card-title">Learning summary</h5>
+            <h5 class="card-title">Tổng quan học tập</h5>
             <div class="summary-item">
                 <div class="summary-icon blue">
                     <i class="bi bi-clock"></i>
                 </div>
                 <div class="summary-content">
-                    <div class="summary-label">Tổng thời lượng</div>
-                    <div class="summary-value" style="color: #4A90E2;">@(ViewBag.TotalDuration ?? 0) hours</div>
+                    <div class="summary-label">Tổng thời lượng học</div>
+                    <div class="summary-value" style="color: #4A90E2;">@(ViewBag.TotalDuration ?? 0) giờ</div>
                 </div>
             </div>
             <div class="summary-item">

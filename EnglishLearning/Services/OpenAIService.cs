@@ -979,5 +979,211 @@ Yêu cầu:
                 };
             }
         }
+
+        public async Task<NewsGenerationResult> GenerateNewsAsync(string topicOrUrl, string level)
+        {
+            try
+            {
+                var isUrl = topicOrUrl.StartsWith("http://") || topicOrUrl.StartsWith("https://");
+                var prompt = isUrl
+                    ? $@"Bạn là một biên tập viên báo chí tiếng Anh. Tôi sẽ cung cấp một đường link báo: {topicOrUrl}
+
+Hãy thực hiện:
+1. Viết bài: Tạo một bài tin tức khoảng 300 từ dựa trên nội dung từ link này.
+2. Điều chỉnh trình độ: Viết bằng từ vựng phù hợp với trình độ {level} (Beginner/Intermediate/Advanced).
+3. SEO: Đề xuất tiêu đề (Title) và mô tả ngắn (Meta Description) thu hút.
+4. Học thuật: Tự động trích xuất 5 từ vựng 'khó' trong bài và cung cấp nghĩa tiếng Việt + ví dụ.
+
+Trả về định dạng JSON:
+{{
+  ""title"": ""Tiêu đề bài tin"",
+  ""metaDescription"": ""Mô tả ngắn cho SEO"",
+  ""content"": ""Nội dung bài tin khoảng 300 từ"",
+  ""level"": ""{level}"",
+  ""topic"": ""Chủ đề của bài tin"",
+  ""vocabularies"": [
+    {{
+      ""word"": ""từ vựng khó"",
+      ""vietnameseMeaning"": ""Nghĩa tiếng Việt"",
+      ""example"": ""Câu ví dụ sử dụng từ này""
+    }}
+  ]
+}}"
+                    : $@"Bạn là một biên tập viên báo chí tiếng Anh. Tôi sẽ cung cấp chủ đề: {topicOrUrl}
+
+Hãy thực hiện:
+1. Viết bài: Tạo một bài tin tức khoảng 300 từ về chủ đề này.
+2. Điều chỉnh trình độ: Viết bằng từ vựng phù hợp với trình độ {level} (Beginner/Intermediate/Advanced).
+3. SEO: Đề xuất tiêu đề (Title) và mô tả ngắn (Meta Description) thu hút.
+4. Học thuật: Tự động trích xuất 5 từ vựng 'khó' trong bài và cung cấp nghĩa tiếng Việt + ví dụ.
+
+Trả về định dạng JSON:
+{{
+  ""title"": ""Tiêu đề bài tin"",
+  ""metaDescription"": ""Mô tả ngắn cho SEO"",
+  ""content"": ""Nội dung bài tin khoảng 300 từ"",
+  ""level"": ""{level}"",
+  ""topic"": ""{topicOrUrl}"",
+  ""vocabularies"": [
+    {{
+      ""word"": ""từ vựng khó"",
+      ""vietnameseMeaning"": ""Nghĩa tiếng Việt"",
+      ""example"": ""Câu ví dụ sử dụng từ này""
+    }}
+  ]
+}}";
+
+                var requestBody = new
+                {
+                    model = "gpt-4o",
+                    messages = new[]
+                    {
+                        new { role = "system", content = "Bạn là biên tập viên báo chí tiếng Anh chuyên nghiệp. Luôn trả về JSON hợp lệ, không có markdown code block." },
+                        new { role = "user", content = prompt }
+                    },
+                    temperature = 0.7
+                };
+
+                var json = JsonSerializer.Serialize(requestBody);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var response = await _httpClient.PostAsync($"{_baseUrl}/chat/completions", content);
+                response.EnsureSuccessStatusCode();
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var responseJson = JsonDocument.Parse(responseContent);
+                var aiContent = responseJson.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+
+                aiContent = Regex.Replace(aiContent, @"```json\s*", "", RegexOptions.IgnoreCase);
+                aiContent = Regex.Replace(aiContent, @"```\s*", "", RegexOptions.IgnoreCase);
+                aiContent = aiContent.Trim();
+
+                var result = JsonSerializer.Deserialize<NewsGenerationResult>(aiContent, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (result == null)
+                {
+                    throw new InvalidOperationException("Không thể parse kết quả từ AI");
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi tạo bài tin tức bằng AI");
+                throw;
+            }
+        }
+
+        public async Task<NewsSummaryDto> SummarizeNewsAsync(string newsContent)
+        {
+            try
+            {
+                var prompt = $@"Hãy tóm tắt bài tin tức sau đây trong vòng 3 câu ngắn gọn và đơn giản nhất để học viên dễ nắm bắt nội dung chính. Sử dụng cấu trúc câu dễ hiểu.
+
+Bài tin tức:
+{newsContent}
+
+Trả về định dạng JSON:
+{{
+  ""summary"": ""Tóm tắt 3 câu ngắn gọn""
+}}";
+
+                var requestBody = new
+                {
+                    model = "gpt-4o",
+                    messages = new[]
+                    {
+                        new { role = "system", content = "Bạn là giáo viên tiếng Anh. Luôn trả về JSON hợp lệ với trường summary." },
+                        new { role = "user", content = prompt }
+                    },
+                    temperature = 0.5
+                };
+
+                var json = JsonSerializer.Serialize(requestBody);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var response = await _httpClient.PostAsync($"{_baseUrl}/chat/completions", content);
+                response.EnsureSuccessStatusCode();
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var responseJson = JsonDocument.Parse(responseContent);
+                var aiContent = responseJson.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+
+                aiContent = Regex.Replace(aiContent, @"```json\s*", "", RegexOptions.IgnoreCase);
+                aiContent = Regex.Replace(aiContent, @"```\s*", "", RegexOptions.IgnoreCase);
+                aiContent = aiContent.Trim();
+
+                var result = JsonSerializer.Deserialize<NewsSummaryDto>(aiContent, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                return result ?? new NewsSummaryDto { Summary = "Không thể tạo tóm tắt. Vui lòng thử lại." };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi tóm tắt bài tin tức bằng AI");
+                throw;
+            }
+        }
+
+        public async Task<GrammarExplanationDto> ExplainGrammarAsync(string newsContent)
+        {
+            try
+            {
+                var prompt = $@"Trong bài tin tức này, hãy tìm và giải thích 2 cấu trúc ngữ pháp nâng cao được sử dụng. Phân tích cách dùng và đặt 1 câu ví dụ khác tương tự cho mỗi cấu trúc.
+
+Bài tin tức:
+{newsContent}
+
+Trả về định dạng JSON:
+{{
+  ""grammarPoints"": [
+    {{
+      ""structure"": ""Cấu trúc ngữ pháp"",
+      ""explanation"": ""Giải thích cách dùng"",
+      ""example"": ""Câu ví dụ khác tương tự""
+    }}
+  ]
+}}";
+
+                var requestBody = new
+                {
+                    model = "gpt-4o",
+                    messages = new[]
+                    {
+                        new { role = "system", content = "Bạn là giáo viên ngữ pháp tiếng Anh chuyên nghiệp. Luôn trả về JSON hợp lệ với mảng grammarPoints chứa 2 phần tử." },
+                        new { role = "user", content = prompt }
+                    },
+                    temperature = 0.5
+                };
+
+                var json = JsonSerializer.Serialize(requestBody);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var response = await _httpClient.PostAsync($"{_baseUrl}/chat/completions", content);
+                response.EnsureSuccessStatusCode();
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var responseJson = JsonDocument.Parse(responseContent);
+                var aiContent = responseJson.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+
+                aiContent = Regex.Replace(aiContent, @"```json\s*", "", RegexOptions.IgnoreCase);
+                aiContent = Regex.Replace(aiContent, @"```\s*", "", RegexOptions.IgnoreCase);
+                aiContent = aiContent.Trim();
+
+                var result = JsonSerializer.Deserialize<GrammarExplanationDto>(aiContent, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                return result ?? new GrammarExplanationDto();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi giải thích ngữ pháp bằng AI");
+                throw;
+            }
+        }
     }
 }

@@ -2,33 +2,320 @@
 @{
     ViewData["Title"] = "Khóa học";
 }
-<div class="container py-4">
-    <h2 class="mb-3"><i class="bi bi-book"></i> Khóa học</h2>
-    <p class="text-muted">Xem và mua khóa học. Thanh toán qua ví MoMo.</p>
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+
+<style>
+    .courses-hero {
+        background: radial-gradient(1200px circle at 10% 10%, rgba(255,255,255,0.18), transparent 45%),
+                    linear-gradient(135deg, #0b74ff 0%, #1b9cff 55%, #41c2ff 100%);
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .courses-hero::after {
+        content: "";
+        position: absolute;
+        inset: -120px -120px auto auto;
+        width: 520px;
+        height: 520px;
+        background: rgba(255,255,255,0.10);
+        border-radius: 50%;
+        filter: blur(0px);
+        transform: rotate(10deg);
+        pointer-events: none;
+    }
+
+    .courses-hero .hero-inner {
+        padding: 52px 0 34px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .hero-kicker {
+        opacity: 0.9;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+        margin-bottom: 8px;
+    }
+
+    .hero-title {
+        font-size: clamp(1.8rem, 2.6vw, 2.35rem);
+        font-weight: 800;
+        line-height: 1.2;
+        margin: 0 0 10px;
+    }
+
+    .hero-subtitle {
+        opacity: 0.92;
+        max-width: 780px;
+        margin: 0;
+    }
+
+    .btn-hero {
+        background: rgba(255,255,255,0.18);
+        border: 1px solid rgba(255,255,255,0.25);
+        color: #fff;
+        backdrop-filter: blur(6px);
+    }
+
+    .btn-hero:hover {
+        background: rgba(255,255,255,0.26);
+        border-color: rgba(255,255,255,0.35);
+        color: #fff;
+    }
+
+    .plans-wrap {
+        margin-top: 0;
+        padding-top: 22px;
+        padding-bottom: 44px;
+    }
+
+    .plan-card {
+        border: 1px solid rgba(255,193,7,0.55);
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 10px 26px rgba(0,0,0,0.08);
+        overflow: hidden;
+        height: 100%;
+    }
+
+    .plan-top {
+        padding: 18px 18px 14px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .plan-badge {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+        padding: 6px 10px;
+        border-radius: 999px;
+    }
+
+    .plan-title {
+        font-size: 1.05rem;
+        font-weight: 800;
+        margin: 0 0 4px;
+        color: #0f172a;
+    }
+
+    .plan-meta {
+        color: #64748b;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    .plan-price {
+        padding: 0 18px 8px;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+    }
+
+    .price-vnd {
+        font-size: 1.85rem;
+        font-weight: 900;
+        color: #0b1324;
+        letter-spacing: -0.4px;
+    }
+
+    .price-unit {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #94a3b8;
+        margin-left: 4px;
+    }
+
+    .price-usd {
+        font-size: 0.9rem;
+        color: #64748b;
+    }
+
+    .plan-actions {
+        padding: 0 18px 16px;
+        display: grid;
+        gap: 10px;
+    }
+
+    .plan-divider {
+        height: 1px;
+        background: #eef2f7;
+        margin: 6px 0 0;
+    }
+
+    .plan-body {
+        padding: 14px 18px 18px;
+    }
+
+    .plan-section-title {
+        font-size: 0.85rem;
+        font-weight: 900;
+        color: #0b1324;
+        margin: 10px 0 10px;
+        letter-spacing: 0.35px;
+    }
+
+    .benefits {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 10px;
+    }
+
+    .benefits li {
+        display: grid;
+        grid-template-columns: 18px 1fr;
+        gap: 10px;
+        align-items: start;
+        color: #334155;
+        font-size: 0.95rem;
+    }
+
+    .benefits i {
+        color: #0d6efd;
+        margin-top: 1px;
+    }
+
+    .plan-more {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 700;
+        color: #0d6efd;
+        text-decoration: none;
+        margin-top: 10px;
+    }
+
+    .plan-more:hover {
+        text-decoration: underline;
+    }
+</style>
+
+<section class="courses-hero">
+    <div class="container hero-inner">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+            <div>
+                <div class="hero-kicker">Chọn gói phù hợp</div>
+                <h1 class="hero-title">Chinh phục lộ trình học tiếng Anh từ nền tảng đến nâng cao</h1>
+                <p class="hero-subtitle">Khóa học được thiết kế theo chủ đề và cấp độ, hỗ trợ học theo lộ trình. Thanh toán nhanh qua MoMo, truy cập mọi lúc mọi nơi.</p>
+            </div>
+            <div class="text-lg-end">
+                <a class="btn btn-hero" href="#course-plans">
+                    <i class="bi bi-card-list"></i> Xem các gói
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container plans-wrap" id="course-plans">
     @if (TempData["ErrorMessage"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show">@TempData["ErrorMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+        <div class="alert alert-danger alert-dismissible fade show mt-3">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
     }
     @if (TempData["InfoMessage"] != null)
     {
-        <div class="alert alert-info alert-dismissible fade show">@TempData["InfoMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+        <div class="alert alert-info alert-dismissible fade show mt-3">
+            @TempData["InfoMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
     }
+
     @if (Model == null || !Model.Any())
     {
-        <p class="text-muted">Chưa có khóa học.</p>
+        <div class="py-5 text-center">
+            <div class="text-muted">Chưa có khóa học.</div>
+        </div>
     }
     else
     {
-        <div class="row g-3">
+        <div class="row g-3 g-lg-4">
             @foreach (var c in Model)
             {
-                <div class="col-md-6 col-lg-4">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title">@c.Title</h5>
-                            <p class="text-muted small">@c.Topic · @c.Level</p>
-                            <p class="fw-bold text-primary">@c.PriceUSD.ToString("N0") USD</p>
-                            <a href="/Courses/Detail/@c.Id" class="btn btn-primary btn-sm">Xem chi tiết</a>
+                // PriceUSD hiện đang được nhập trực tiếp bằng VND từ Admin
+                var vnd = (long)Math.Round((double)c.PriceUSD);
+
+                var raw = (c.MarketingCopy ?? "").Replace("\r", "");
+                var bullets = raw.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+                if (bullets.Count == 0)
+                {
+                    bullets = new List<string>
+                    {
+                        "Học theo lộ trình rõ ràng theo chủ đề và cấp độ",
+                        "Bài tập và ví dụ thực hành xuyên suốt khóa học",
+                        "Từ vựng theo ngữ cảnh, hỗ trợ ghi nhớ hiệu quả",
+                        "Tương thích học trên máy tính và điện thoại",
+                        "Hỗ trợ thanh toán nhanh qua MoMo"
+                    };
+                }
+
+                var shown = bullets.Take(5).ToList();
+                var hidden = bullets.Skip(5).Take(6).ToList();
+                var collapseId = $"benefitsMore_{c.Id}";
+
+                <div class="col-12 col-lg-6">
+                    <div class="plan-card">
+                        <div class="plan-top">
+                            <div>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <i class="bi bi-mortarboard-fill text-primary"></i>
+                                    <h3 class="plan-title">@c.Title</h3>
+                                </div>
+                                <p class="plan-meta">@c.Topic · @c.Level</p>
+                            </div>
+                        </div>
+
+                        <div class="plan-price">
+                            <div>
+                                <span class="price-vnd">@vnd.ToString("N0")</span><span class="price-unit">VND</span>
+                            </div>
+                        </div>
+
+                        <div class="plan-actions">
+                            <a href="/Courses/Detail/@c.Id" class="btn btn-primary btn-lg" style="border-radius: 12px;">
+                                Đăng ký học ngay
+                            </a>
+                        </div>
+
+                        <div class="plan-divider"></div>
+
+                        <div class="plan-body">
+                            <div class="plan-section-title">QUYỀN LỢI</div>
+                            <ul class="benefits">
+                                @foreach (var b in shown)
+                                {
+                                    <li>
+                                        <i class="bi bi-check-circle-fill"></i>
+                                        <div>@b</div>
+                                    </li>
+                                }
+                            </ul>
+
+                            @if (hidden.Any())
+                            {
+                                <a class="plan-more" data-bs-toggle="collapse" href="#@collapseId" role="button" aria-expanded="false" aria-controls="@collapseId">
+                                    Xem thêm quyền lợi <i class="bi bi-chevron-down"></i>
+                                </a>
+                                <div class="collapse mt-3" id="@collapseId">
+                                    <ul class="benefits">
+                                        @foreach (var b in hidden)
+                                        {
+                                            <li>
+                                                <i class="bi bi-check-circle-fill"></i>
+                                                <div>@b</div>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
                         </div>
                     </div>
                 </div>

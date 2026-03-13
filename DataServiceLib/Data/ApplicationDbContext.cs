@@ -18,6 +18,8 @@ namespace DataServiceLib.Data
         public DbSet<Submission> Submissions { get; set; }
         public DbSet<Course> Courses { get; set; }
         public DbSet<Order> Orders { get; set; }
+        public DbSet<News> News { get; set; }
+        public DbSet<NewsVocabulary> NewsVocabularies { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -140,6 +142,32 @@ namespace DataServiceLib.Data
                       .WithMany()
                       .HasForeignKey(e => e.LessonId)
                       .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Cấu hình News
+            modelBuilder.Entity<News>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.MetaDescription).HasMaxLength(1000);
+                entity.Property(e => e.Content).IsRequired().HasMaxLength(10000);
+                entity.Property(e => e.Level).HasMaxLength(20);
+                entity.Property(e => e.SourceUrl).HasMaxLength(1000);
+                entity.Property(e => e.Topic).HasMaxLength(200);
+                entity.Property(e => e.FeaturedImagePath).HasMaxLength(500);
+            });
+
+            // Cấu hình NewsVocabulary
+            modelBuilder.Entity<NewsVocabulary>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Word).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.VietnameseMeaning).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.Example).HasMaxLength(500);
+                entity.HasOne(e => e.News)
+                      .WithMany(n => n.Vocabularies)
+                      .HasForeignKey(e => e.NewsId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
             // Seed data cho Roles

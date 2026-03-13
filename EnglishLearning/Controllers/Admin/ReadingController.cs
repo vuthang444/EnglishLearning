@@ -250,7 +250,7 @@ namespace EnglishLearning.Controllers.Admin
             }
         }
 
-        // Sửa bài học
+        // Sửa bài đọc + bộ câu hỏi (giống Listening)
         [HttpGet]
         [Route("Admin/Reading/EditLesson/{id}")]
         public async Task<IActionResult> EditLesson(int id)
@@ -267,17 +267,60 @@ namespace EnglishLearning.Controllers.Admin
                 return RedirectToAction("Index");
             }
 
+            var exercises = await _exerciseRepository.GetByLessonIdAsync(id);
             ViewBag.Skill = lesson.Skill;
-            var dto = new LessonDto
+            ViewBag.ReadingLevels = new List<string> { "A1", "A2", "B1", "B2", "C1", "C2" };
+
+            var dto = new ReadingPassageDto
             {
                 Id = lesson.Id,
                 Title = lesson.Title,
                 Description = lesson.Description,
+                ReadingContent = lesson.ReadingContent ?? string.Empty,
+                ReadingLevel = lesson.ReadingLevel,
                 SkillId = lesson.SkillId,
                 Level = lesson.Level,
                 Order = lesson.Order,
-                IsActive = lesson.IsActive
+                IsActive = lesson.IsActive,
+                Questions = new List<ReadingQuestionDto>()
             };
+
+            // Map exercises -> câu hỏi trắc nghiệm
+            foreach (var exercise in exercises.OrderBy(e => e.Order))
+            {
+                var answers = exercise.Answers?.OrderBy(a => a.Order).ToList() ?? new List<Answer>();
+                string optionA = answers.ElementAtOrDefault(0)?.Text ?? string.Empty;
+                string optionB = answers.ElementAtOrDefault(1)?.Text ?? string.Empty;
+                string optionC = answers.ElementAtOrDefault(2)?.Text ?? string.Empty;
+                string optionD = answers.ElementAtOrDefault(3)?.Text ?? string.Empty;
+
+                string correctAnswer = "A";
+                var correct = answers.FirstOrDefault(a => a.IsCorrect);
+                if (correct != null)
+                {
+                    var idx = answers.IndexOf(correct);
+                    correctAnswer = idx switch
+                    {
+                        0 => "A",
+                        1 => "B",
+                        2 => "C",
+                        3 => "D",
+                        _ => "A"
+                    };
+                }
+
+                dto.Questions.Add(new ReadingQuestionDto
+                {
+                    Id = exercise.Id,
+                    Question = exercise.Question,
+                    OptionA = optionA,
+                    OptionB = optionB,
+                    OptionC = optionC,
+                    OptionD = optionD,
+                    CorrectAnswer = correctAnswer,
+                    Order = exercise.Order
+                });
+            }
 
             return View("~/Views/Admin/Reading/EditLesson.cshtml", dto);
         }
@@ -285,7 +328,7 @@ namespace EnglishLearning.Controllers.Admin
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("Admin/Reading/EditLesson/{id}")]
-        public async Task<IActionResult> EditLesson(int id, LessonDto dto)
+        public async Task<IActionResult> EditLesson(int id, ReadingPassageDto dto)
         {
             if (id != dto.Id)
             {
@@ -304,6 +347,7 @@ namespace EnglishLearning.Controllers.Admin
             if (!ModelState.IsValid)
             {
                 ViewBag.Skill = readingSkill;
+                ViewBag.ReadingLevels = new List<string> { "A1", "A2", "B1", "B2", "C1", "C2" };
                 return View("~/Views/Admin/Reading/EditLesson.cshtml", dto);
             }
 
@@ -315,6 +359,7 @@ namespace EnglishLearning.Controllers.Admin
                     return NotFound();
                 }
 
+                // Cập nhật thông tin bài đọc
                 lesson.Title = dto.Title;
                 lesson.Description = dto.Description;
                 lesson.ReadingContent = dto.ReadingContent;
@@ -325,7 +370,47 @@ namespace EnglishLearning.Controllers.Admin
                 lesson.IsActive = dto.IsActive;
 
                 await _lessonRepository.UpdateAsync(lesson);
-                TempData["SuccessMessage"] = "Cập nhật bài học thành công!";
+
+                // Xóa các bài tập cũ
+                var existingExercises = await _exerciseRepository.GetByLessonIdAsync(lesson.Id);
+                foreach (var exercise in existingExercises)
+                {
+                    await _exerciseRepository.DeleteAsync(exercise.Id);
+                }
+
+                // Tạo lại bài tập trắc nghiệm từ dto.Questions
+                if (dto.Questions != null && dto.Questions.Any())
+                {
+                    int questionOrder = 1;
+                    foreach (var q in dto.Questions)
+                    {
+                        if (string.IsNullOrWhiteSpace(q.Question))
+                        {
+                            continue;
+                        }
+
+                        var exercise = new Exercise
+                        {
+                            Question = q.Question,
+                            LessonId = lesson.Id,
+                            Type = CommonLib.Entities.ExerciseType.MultipleChoice,
+                            Order = questionOrder++,
+                            IsActive = true
+                        };
+
+                        exercise.Answers = new List<Answer>
+                        {
+                            new Answer { Text = q.OptionA, IsCorrect = q.CorrectAnswer == "A", Order = 1 },
+                            new Answer { Text = q.OptionB, IsCorrect = q.CorrectAnswer == "B", Order = 2 },
+                            new Answer { Text = q.OptionC, IsCorrect = q.CorrectAnswer == "C", Order = 3 },
+                            new Answer { Text = q.OptionD, IsCorrect = q.CorrectAnswer == "D", Order = 4 }
+                        };
+
+                        await _exerciseRepository.CreateAsync(exercise);
+                    }
+                }
+
+                TempData["SuccessMessage"] = "Cập nhật bài đọc và câu hỏi thành công!";
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
@@ -333,6 +418,7 @@ namespace EnglishLearning.Controllers.Admin
                 _logger.LogError(ex, "Lỗi khi cập nhật bài học");
                 ModelState.AddModelError("", "Đã xảy ra lỗi khi cập nhật bài học. Vui lòng thử lại.");
                 ViewBag.Skill = readingSkill;
+                ViewBag.ReadingLevels = new List<string> { "A1", "A2", "B1", "B2", "C1", "C2" };
                 return View("~/Views/Admin/Reading/EditLesson.cshtml", dto);
             }
         }

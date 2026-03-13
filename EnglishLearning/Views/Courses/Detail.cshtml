@@ -3,52 +3,280 @@
     ViewData["Title"] = Model?.Title ?? "Chi tiết";
     var already = ViewBag.AlreadyPurchased as bool? ?? false;
 }
-<div class="container py-4">
-    @if (Model == null)
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    // Giá hiện đang được nhập trực tiếp bằng VND từ Admin (PriceUSD)
+    var vnd = Model == null ? 0 : (long)Math.Round((double)Model.PriceUSD);
+
+    var raw = (Model?.MarketingCopy ?? "").Replace("\r", "");
+    var bullets = raw.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+    if (bullets.Count == 0)
     {
-        <p>Không tìm thấy.</p>
-    }
-    else
-    {
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show">@TempData["ErrorMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-    }
-    <h2>@Model.Title</h2>
-    <p class="text-muted">@Model.Topic · @Model.Level</p>
-    @if (!string.IsNullOrEmpty(Model.TargetAudience)) { <p><strong>Đối tượng:</strong> @Model.TargetAudience</p> }
-    @if (!string.IsNullOrEmpty(Model.MarketingCopy)) { <div class="mb-3">@Html.Raw(Model.MarketingCopy?.Replace("\n", "<br/>"))</div> }
-    <p class="h4 text-primary">@Model.PriceUSD.ToString("N0") USD</p>
-    @if (already)
-    {
-        <p class="text-success">Bạn đã sở hữu khóa học này.</p>
-        <a href="/Courses/MyCourses" class="btn btn-outline-primary">Khóa học của tôi</a>
-    }
-    else
-    {
-        @if (User.Identity?.IsAuthenticated == true)
+        bullets = new List<string>
         {
-            <form method="post" action="/Courses/Checkout/@Model.Id" class="d-inline">
-                @Html.AntiForgeryToken()
-                <div class="mb-3">
-                    <label for="paymentMethod" class="form-label">Chọn phương thức thanh toán:</label>
-                    <select name="paymentMethod" id="paymentMethod" class="form-select d-inline-block" style="width: auto; margin-right: 10px;">
-                        <option value="payWithATM" selected>Thẻ ATM (MoMo Test)</option>
-                        <option value="payWithCC">Thẻ tín dụng/Ghi nợ (MoMo Test)</option>
-                        <option value="captureWallet">Ví MoMo</option>
-                    </select>
-                    <button type="submit" class="btn btn-success">
-                        <i class="bi bi-credit-card"></i> Mua ngay
-                    </button>
+            "Lộ trình học rõ ràng theo chủ đề và cấp độ",
+            "Bài tập và ví dụ thực hành xuyên suốt",
+            "Từ vựng theo ngữ cảnh, dễ ghi nhớ",
+            "Học mọi lúc mọi nơi trên nhiều thiết bị",
+            "Thanh toán nhanh và an toàn qua MoMo"
+        };
+    }
+}
+
+<style>
+    .course-hero {
+        background: radial-gradient(1100px circle at 10% 10%, rgba(255,255,255,0.18), transparent 45%),
+                    linear-gradient(135deg, #0b74ff 0%, #1b9cff 55%, #41c2ff 100%);
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .course-hero::after {
+        content: "";
+        position: absolute;
+        inset: -120px -120px auto auto;
+        width: 520px;
+        height: 520px;
+        background: rgba(255,255,255,0.10);
+        border-radius: 50%;
+        transform: rotate(10deg);
+        pointer-events: none;
+    }
+
+    .course-hero .inner {
+        padding: 44px 0 26px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .course-title {
+        font-size: clamp(1.65rem, 2.6vw, 2.25rem);
+        font-weight: 900;
+        margin: 8px 0 10px;
+        line-height: 1.2;
+    }
+
+    .course-meta {
+        display: inline-flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        opacity: 0.95;
+        margin-bottom: 10px;
+        align-items: center;
+    }
+
+    .course-chip {
+        background: rgba(255,255,255,0.16);
+        border: 1px solid rgba(255,255,255,0.22);
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+
+    .wrap {
+        padding: 22px 0 44px;
+    }
+
+    .panel {
+        border: 1px solid rgba(255,193,7,0.55);
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 10px 26px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+
+    .panel-body {
+        padding: 18px;
+    }
+
+    .panel-title {
+        font-size: 1.05rem;
+        font-weight: 900;
+        color: #0f172a;
+        margin: 0 0 10px;
+    }
+
+    .price-vnd {
+        font-size: 1.85rem;
+        font-weight: 900;
+        color: #0b1324;
+        letter-spacing: -0.4px;
+    }
+
+    .price-unit {
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: #94a3b8;
+        margin-left: 4px;
+    }
+
+    .price-usd {
+        color: #64748b;
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+
+    .benefits {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 10px;
+    }
+
+    .benefits li {
+        display: grid;
+        grid-template-columns: 18px 1fr;
+        gap: 10px;
+        align-items: start;
+        color: #334155;
+        font-size: 0.98rem;
+    }
+
+    .benefits i {
+        color: #0d6efd;
+        margin-top: 1px;
+    }
+</style>
+
+@if (Model == null)
+{
+    <div class="container py-4">
+        <div class="alert alert-warning mb-0">Không tìm thấy khóa học.</div>
+        <div class="mt-3">
+            <a href="/Courses" class="btn btn-secondary">Quay lại</a>
+        </div>
+    </div>
+}
+else
+{
+    <section class="course-hero">
+        <div class="container inner">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                <div>
+                    <a href="/Courses" class="btn btn-sm" style="background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.22); color: #fff;">
+                        <i class="bi bi-arrow-left"></i> Quay lại khóa học
+                    </a>
+                    <div class="course-meta mt-3">
+                        <span class="course-chip"><i class="bi bi-tag"></i> @Model.Topic</span>
+                        <span class="course-chip"><i class="bi bi-bar-chart"></i> @Model.Level</span>
+                    </div>
+                    <h1 class="course-title">@Model.Title</h1>
+                    @if (!string.IsNullOrWhiteSpace(Model.TargetAudience))
+                    {
+                        <div style="opacity: 0.92; max-width: 900px;">
+                            <strong>Đối tượng:</strong> @Model.TargetAudience
+                        </div>
+                    }
                 </div>
-            </form>
-        }
-        else
+                <div class="text-end" style="min-width: 220px;">
+                    <div class="price-vnd">@vnd.ToString("N0")<span class="price-unit">VND</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="container wrap">
+        @if (TempData["ErrorMessage"] != null)
         {
-            <p class="text-warning">Vui lòng <a href="/Auth/Login">đăng nhập</a> để mua khóa học.</p>
+            <div class="alert alert-danger alert-dismissible fade show">
+                @TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
         }
-    }
-    <a href="/Courses" class="btn btn-secondary ms-2">Quay lại</a>
-    }
-</div>
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show">
+                @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <div class="row g-3 g-lg-4">
+            <div class="col-12 col-lg-7">
+                <div class="panel">
+                    <div class="panel-body">
+                        <div class="panel-title"><i class="bi bi-award-fill text-primary"></i> Quyền lợi khóa học</div>
+                        <ul class="benefits">
+                            @foreach (var b in bullets.Take(10))
+                            {
+                                <li>
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    <div>@b</div>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-5">
+                <div class="panel">
+                    <div class="panel-body">
+                        <div class="panel-title"><i class="bi bi-credit-card-2-front-fill text-primary"></i> Đăng ký & thanh toán</div>
+
+                        @if (already)
+                        {
+                            <div class="alert alert-success mb-3">
+                                Bạn đã sở hữu khóa học này.
+                            </div>
+                            <a href="/Courses/MyCourses" class="btn btn-outline-primary w-100" style="border-radius: 12px;">
+                                <i class="bi bi-collection-play"></i> Khóa học của tôi
+                            </a>
+                        }
+                        else
+                        {
+                            @if (User.Identity?.IsAuthenticated == true)
+                            {
+                                <form method="post" action="/Courses/Checkout/@Model.Id">
+                                    @Html.AntiForgeryToken()
+                                    <div class="mb-3">
+                                        <label for="paymentMethod" class="form-label fw-semibold">Phương thức thanh toán</label>
+                                        <select name="paymentMethod" id="paymentMethod" class="form-select" style="border-radius: 12px;">
+                                            <option value="payWithATM">Thẻ ATM (MoMo Test)</option>
+                                            <option value="payWithCC">Thẻ tín dụng/Ghi nợ (MoMo Test)</option>
+                                            <option value="captureWallet">Ví MoMo</option>
+                                            <option value="vnpay">VNPay</option>
+                                            <option value="cash">Tiền mặt</option>
+                                        </select>
+                                    </div>
+                                    <div id="paymentHint" class="text-muted mt-2" style="font-size: 0.9rem;">
+                                        Bạn sẽ được chuyển sang trang thanh toán MoMo để hoàn tất giao dịch.
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-lg w-100 mt-3" style="border-radius: 12px;">
+                                        <i class="bi bi-lock-fill"></i> Mua ngay
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning mb-3">
+                                    Vui lòng đăng nhập để mua khóa học.
+                                </div>
+                                <a href="/Auth/Login" class="btn btn-primary w-100" style="border-radius: 12px;">
+                                    <i class="bi bi-box-arrow-in-right"></i> Đăng nhập
+                                </a>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<script>
+    document.getElementById('paymentMethod').addEventListener('change', function() {
+        var hint = document.getElementById('paymentHint');
+        if (this.value === 'cash') {
+            hint.textContent = 'Đơn hàng sẽ được tạo. Bạn đến văn phòng/trung tâm để thanh toán tiền mặt và kích hoạt khóa học.';
+        } else if (this.value === 'vnpay') {
+            hint.textContent = 'Bạn sẽ được chuyển sang trang thanh toán VNPay để hoàn tất giao dịch.';
+        } else {
+            hint.textContent = 'Bạn sẽ được chuyển sang trang thanh toán MoMo để hoàn tất giao dịch.';
+        }
+    });
+</script>
 

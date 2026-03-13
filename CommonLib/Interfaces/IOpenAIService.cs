@@ -60,6 +60,15 @@ namespace CommonLib.Interfaces
 
         /// <summary>Lấy từ của ngày (Word of the day).</summary>
         Task<WordOfTheDayDto> GetWordOfTheDayAsync();
+
+        /// <summary>AI tạo bài tin tức từ chủ đề hoặc link báo.</summary>
+        Task<NewsGenerationResult> GenerateNewsAsync(string topicOrUrl, string level);
+
+        /// <summary>AI tóm tắt bài tin tức (Premium feature).</summary>
+        Task<NewsSummaryDto> SummarizeNewsAsync(string newsContent);
+
+        /// <summary>AI giải thích ngữ pháp trong bài tin tức (Premium feature).</summary>
+        Task<GrammarExplanationDto> ExplainGrammarAsync(string newsContent);
     }
 
     public class SpeakingContentGenerationResult

@@ -27,12 +27,14 @@ builder.Services.AddScoped<IExerciseRepository, ExerciseRepository>();
 builder.Services.AddScoped<ISubmissionRepository, SubmissionRepository>();
 builder.Services.AddScoped<ICourseRepository, CourseRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<INewsRepository, NewsRepository>();
 
 // Đăng ký Services
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOpenAIService, OpenAIService>();
 builder.Services.AddScoped<IMoMoService, MoMoService>();
+builder.Services.AddScoped<IVnPayService, VnPayService>();
 builder.Services.AddHttpClient();
 
 // Cấu hình JWT Authentication

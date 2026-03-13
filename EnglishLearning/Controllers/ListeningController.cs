@@ -142,9 +142,10 @@ namespace EnglishLearning.Controllers
 
             // Kiểm tra xem đã làm bài chưa
             var existingSubmission = await _submissionRepository.GetByUserAndLessonAsync(userId, lessonId);
+            // Luôn khởi tạo HasSubmitted để tránh null trong view (RuntimeBinderException khi dùng toán tử !)
+            ViewBag.HasSubmitted = existingSubmission != null;
             if (existingSubmission != null)
             {
-                ViewBag.HasSubmitted = true;
                 ViewBag.PreviousScore = existingSubmission.Score;
                 ViewBag.PreviousMaxScore = existingSubmission.MaxScore;
             }

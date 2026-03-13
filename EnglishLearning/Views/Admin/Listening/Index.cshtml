@@ -117,8 +117,11 @@
                                             <a href="@Url.Action("EditLesson", new { id = lesson.Id })" class="btn btn-sm btn-warning" title="Sửa">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
-                                            <form asp-action="DeleteLesson" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa bài học này? Tất cả bài tập liên quan cũng sẽ bị xóa.');">
-                                                <input type="hidden" name="id" value="@lesson.Id" />
+                                            <form asp-action="DeleteLesson"
+                                                  asp-route-id="@lesson.Id"
+                                                  method="post"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('Bạn có chắc chắn muốn xóa bài học này? Tất cả bài tập liên quan cũng sẽ bị xóa.');">
                                                 <button type="submit" class="btn btn-sm btn-danger" title="Xóa">
                                                     <i class="bi bi-trash"></i>
                                                 </button>

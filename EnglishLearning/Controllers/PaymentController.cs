@@ -7,11 +7,13 @@ namespace EnglishLearning.Controllers
     public class PaymentController : Controller
     {
         private readonly IOrderRepository _orderRepo;
+        private readonly IVnPayService _vnPay;
         private readonly ILogger<PaymentController> _logger;
 
-        public PaymentController(IOrderRepository orderRepo, ILogger<PaymentController> logger)
+        public PaymentController(IOrderRepository orderRepo, IVnPayService vnPay, ILogger<PaymentController> logger)
         {
             _orderRepo = orderRepo;
+            _vnPay = vnPay;
             _logger = logger;
         }
 
@@ -111,6 +113,61 @@ namespace EnglishLearning.Controllers
             }
 
             return Json(new { resultCode = 0, message = "Success" });
+        }
+
+        [HttpGet]
+        [Route("Payment/VnPayReturn")]
+        public async Task<IActionResult> VnPayReturn()
+        {
+            var query = Request.Query;
+            var vnpTxnRef = query["vnp_TxnRef"].ToString();
+            var vnpResponseCode = query["vnp_ResponseCode"].ToString();
+            var vnpTransactionStatus = query["vnp_TransactionStatus"].ToString();
+            var vnpSecureHash = query["vnp_SecureHash"].ToString();
+
+            if (string.IsNullOrEmpty(vnpTxnRef))
+            {
+                return View("~/Views/Payment/Result.cshtml", new PaymentResultVm { Success = false, Message = "Thiếu tham số." });
+            }
+
+            var queryParams = query.Keys
+                .Where(k => k.StartsWith("vnp_", StringComparison.OrdinalIgnoreCase) &&
+                            !string.Equals(k, "vnp_SecureHash", StringComparison.OrdinalIgnoreCase) &&
+                            !string.Equals(k, "vnp_SecureHashType", StringComparison.OrdinalIgnoreCase))
+                .Select(k => new KeyValuePair<string, string>(k, query[k].ToString() ?? ""))
+                .ToList();
+
+            if (!_vnPay.ValidateReturnSignature(queryParams, vnpSecureHash))
+            {
+                _logger.LogWarning("VNPay return invalid signature. TxnRef={TxnRef}", vnpTxnRef);
+                return View("~/Views/Payment/Result.cshtml", new PaymentResultVm { Success = false, Message = "Chữ ký không hợp lệ." });
+            }
+
+            var order = await _orderRepo.GetByMomoOrderIdAsync(vnpTxnRef);
+            if (order == null)
+            {
+                return View("~/Views/Payment/Result.cshtml", new PaymentResultVm { Success = false, Message = "Không tìm thấy đơn hàng." });
+            }
+
+            if (order.Status == "Paid")
+            {
+                return View("~/Views/Payment/Result.cshtml", new PaymentResultVm { Success = true, Message = "Bạn đã thanh toán khóa học này.", Order = order });
+            }
+
+            if (vnpResponseCode == "00" && vnpTransactionStatus == "00")
+            {
+                order.Status = "Paid";
+                order.MomoTransId = query["vnp_TransactionNo"].ToString();
+                order.MomoResultCode = 0;
+                order.MomoMessage = "VNPay success";
+                await _orderRepo.UpdateAsync(order);
+                return View("~/Views/Payment/Result.cshtml", new PaymentResultVm { Success = true, Message = "Thanh toán VNPay thành công.", Order = order });
+            }
+
+            order.Status = "Failed";
+            order.MomoMessage = $"VNPay ResponseCode={vnpResponseCode}, TransactionStatus={vnpTransactionStatus}";
+            await _orderRepo.UpdateAsync(order);
+            return View("~/Views/Payment/Result.cshtml", new PaymentResultVm { Success = false, Message = "Thanh toán không thành công.", Order = order });
         }
     }
 }

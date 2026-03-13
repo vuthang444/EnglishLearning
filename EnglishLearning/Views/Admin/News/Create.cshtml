@@ -1,0 +1,70 @@
+@{
+    ViewData["Title"] = "Tạo bài tin tức mới";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <h2>Tạo bài tin tức mới với AI</h2>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post" action="@Url.Action("Create")" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <label class="form-label">Chủ đề hoặc Link báo tiếng Anh</label>
+                    <input type="text" name="topicOrUrl" class="form-control" placeholder="Ví dụ: 'Climate change' hoặc 'https://www.bbc.com/news/...'" required />
+                    <small class="form-text text-muted">Nhập chủ đề bạn muốn viết hoặc link bài báo tiếng Anh để AI phân tích và viết lại.</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Trình độ</label>
+                    <select name="level" class="form-select" required>
+                        <option value="Beginner">Beginner</option>
+                        <option value="Intermediate" selected>Intermediate</option>
+                        <option value="Advanced">Advanced</option>
+                    </select>
+                    <small class="form-text text-muted">AI sẽ điều chỉnh từ vựng và cấu trúc câu phù hợp với trình độ này.</small>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="publishImmediately" id="publishImmediately" value="true" checked>
+                        <label class="form-check-label" for="publishImmediately">
+                            <strong>Xuất bản ngay</strong> (Tin tức sẽ hiển thị cho người dùng ngay sau khi tạo)
+                        </label>
+                    </div>
+                    <small class="form-text text-muted">Bỏ chọn nếu bạn muốn xem lại và chỉnh sửa trước khi xuất bản.</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Ảnh đại diện (tùy chọn)</label>
+                    <input type="file" name="featuredImage" class="form-control" accept="image/jpeg,image/png,image/gif,image/webp" />
+                    <small class="form-text text-muted">Định dạng: JPG, PNG, GIF, WebP. Có thể thêm ảnh sau khi tạo bài (vào Sửa).</small>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> <strong>Lưu ý:</strong> AI sẽ tự động:
+                    <ul class="mb-0 mt-2">
+                        <li>Viết bài tin tức khoảng 300 từ</li>
+                        <li>Tạo tiêu đề và mô tả SEO</li>
+                        <li>Trích xuất 5 từ vựng khó kèm nghĩa và ví dụ</li>
+                        <li>Mặc định cho phép Free users xem (Free Preview)</li>
+                    </ul>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-magic"></i> Tạo bài tin tức với AI
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary">Hủy</a>
+            </form>
+        </div>
+    </div>
+</div>

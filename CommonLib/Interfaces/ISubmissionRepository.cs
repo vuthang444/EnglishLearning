@@ -9,6 +9,7 @@ namespace CommonLib.Interfaces
         Task<Submission?> GetByUserAndLessonAsync(int userId, int lessonId);
         Task<List<Submission>> GetByUserIdAsync(int userId);
         Task<List<Submission>> GetByLessonIdAsync(int lessonId);
+        Task<List<Submission>> GetAllAsync();
         Task<Submission> CreateAsync(Submission submission);
         Task<Submission> UpdateAsync(Submission submission);
         Task<bool> DeleteAsync(int id);

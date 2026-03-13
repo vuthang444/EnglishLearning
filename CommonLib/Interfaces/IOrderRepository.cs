@@ -9,6 +9,7 @@ namespace CommonLib.Interfaces
         Task<List<Order>> GetByUserIdAsync(int userId);
         Task<List<Order>> GetPaidByUserAndCourseAsync(int userId, int courseId);
         Task<bool> HasActivePremiumAsync(int userId);
+        Task<List<Order>> GetAllAsync();
         Task<Order> CreateAsync(Order order);
         Task<Order> UpdateAsync(Order order);
     }

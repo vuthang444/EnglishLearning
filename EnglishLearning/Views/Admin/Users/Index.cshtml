@@ -1,0 +1,86 @@
+@model List<CommonLib.Entities.User>
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var orderCounts = ViewBag.OrderCounts as Dictionary<int, int> ?? new();
+}
+
+<div class="admin-dashboard">
+    <h2 class="mb-2">Quản lý người dùng</h2>
+    <p class="text-muted mb-3">Danh sách tài khoản trong hệ thống</p>
+
+    <div class="mb-3">
+        <a href="/Admin/Users/Create" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Tạo người dùng mới
+        </a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">Chưa có người dùng nào.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Tên đăng nhập</th>
+                        <th>Email</th>
+                        <th>Vai trò</th>
+                        <th>Trạng thái</th>
+                        <th>Đơn đã thanh toán</th>
+                        <th>Ngày tạo</th>
+                        <th style="width: 120px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var u in Model)
+                    {
+                        orderCounts.TryGetValue(u.Id, out var paidCount);
+                        <tr>
+                            <td>@u.Id</td>
+                            <td>@u.Username</td>
+                            <td>@u.Email</td>
+                            <td>
+                                @if (u.Role?.Name == "Admin")
+                                {
+                                    <span class="badge bg-danger">Admin</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-primary">User</span>
+                                }
+                            </td>
+                            <td>
+                                @if (u.IsActive)
+                                {
+                                    <span class="badge bg-success">Hoạt động</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Khóa</span>
+                                }
+                            </td>
+                            <td>@paidCount</td>
+                            <td>@u.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                <a href="/Admin/Users/Edit/@u.Id" class="btn btn-sm btn-outline-primary me-1" title="Sửa">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form method="post" action="/Admin/Users/Delete/@u.Id" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn xóa hoàn toàn tài khoản này? Hành động này có thể không hoàn tác được.');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+

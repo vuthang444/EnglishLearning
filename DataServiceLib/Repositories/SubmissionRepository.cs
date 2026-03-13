@@ -51,6 +51,14 @@ namespace DataServiceLib.Repositories
                 .ToListAsync();
         }
 
+        public async Task<List<Submission>> GetAllAsync()
+        {
+            return await _context.Submissions
+                .Include(s => s.Lesson)
+                .ThenInclude(l => l!.Skill)
+                .ToListAsync();
+        }
+
         public async Task<Submission> CreateAsync(Submission submission)
         {
             _context.Submissions.Add(submission);

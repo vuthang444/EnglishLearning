@@ -1,7 +1,7 @@
 @{
-    ViewData["Title"] = "Làm bài Writing";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var lesson = ViewBag.Lesson as CommonLib.Entities.Lesson;
+    ViewData["Title"] = lesson != null ? "Writing - " + lesson.Title : "Làm bài Writing";
 }
 
 @if (lesson == null)
@@ -15,6 +15,13 @@
 else
 {
     <div class="container my-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Writing")">Writing</a></li>
+                <li class="breadcrumb-item active" aria-current="page">@lesson.Title</li>
+            </ol>
+        </nav>
         <div class="row">
             <!-- Cột trái: Đề bài và gợi ý -->
             <div class="col-lg-5 mb-4">
@@ -76,33 +83,35 @@ else
                             <i class="bi bi-pencil"></i> Viết bài của bạn
                         </h5>
                         <div>
-                            <span id="wordCount" class="badge bg-light text-dark">0 từ</span>
+                            <span id="wordCount" class="badge bg-light text-dark practice-wordcount">0 từ</span>
                         </div>
                     </div>
                     <div class="card-body">
+                        <label for="essayText" class="visually-hidden">Nội dung bài viết</label>
                         <textarea id="essayText" 
                                   class="form-control" 
                                   rows="20" 
                                   placeholder="Viết bài của bạn ở đây..."
+                                  aria-label="Nội dung bài viết"
                                   style="font-size: 16px; line-height: 1.6;"></textarea>
                         
-                        <div class="mt-3 d-flex justify-content-between align-items-center">
-                            <div>
+                        <div class="mt-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div class="practice-timer">
                                 <small class="text-muted">
-                                    <i class="bi bi-clock"></i> 
-                                    Thời gian: <span id="timer">00:00</span>
+                                    <i class="bi bi-clock" aria-hidden="true"></i> 
+                                    Thời gian: <span id="timer" aria-live="polite">00:00</span>
                                 </small>
                             </div>
                             <div>
-                                <button id="btnSubmit" class="btn btn-primary" disabled>
-                                    <i class="bi bi-send"></i> Nộp bài
+                                <button id="btnSubmit" class="btn btn-primary" disabled aria-label="Nộp bài">
+                                    <i class="bi bi-send" aria-hidden="true"></i> Nộp bài
                                 </button>
                             </div>
                         </div>
 
-                        <div id="submittingStatus" class="mt-3" style="display: none;">
+                        <div id="submittingStatus" class="mt-3" style="display: none;" role="status" aria-live="polite" aria-atomic="true">
                             <div class="alert alert-info">
-                                <i class="bi bi-hourglass-split"></i> Đang chấm điểm bằng AI, vui lòng đợi...
+                                <i class="bi bi-hourglass-split" aria-hidden="true"></i> Đang chấm điểm bằng AI, vui lòng đợi...
                             </div>
                         </div>
                     </div>

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
@@ -145,16 +145,23 @@
                         @if (User.Identity?.IsAuthenticated == true)
                         {
                             <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="practiceDropdown" role="button" 
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                    Luyện tập
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="practiceDropdown">
+                                    <li><a class="dropdown-item" href="/Listening"><i class="bi bi-earbuds"></i> Listening</a></li>
+                                    <li><a class="dropdown-item" href="/Speaking"><i class="bi bi-mic"></i> Speaking</a></li>
+                                    <li><a class="dropdown-item" href="/Reading"><i class="bi bi-book"></i> Reading</a></li>
+                                    <li><a class="dropdown-item" href="/Writing"><i class="bi bi-pencil"></i> Writing</a></li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" id="coursesDropdown" role="button" 
                                    data-bs-toggle="dropdown" aria-expanded="false">
                                     Khóa học
                                 </a>
                                 <ul class="dropdown-menu" aria-labelledby="coursesDropdown">
-                                    <li><a class="dropdown-item" href="/Listening">Listening</a></li>
-                                    <li><a class="dropdown-item" href="/Speaking">Speaking</a></li>
-                                    <li><a class="dropdown-item" href="/Reading">Reading</a></li>
-                                    <li><a class="dropdown-item" href="/Writing">Writing</a></li>
-                                    <li><hr class="dropdown-divider" /></li>
                                     <li><a class="dropdown-item" href="/Courses"><i class="bi bi-shop"></i> Danh sách khóa học</a></li>
                                     <li><a class="dropdown-item" href="/Courses/MyCourses"><i class="bi bi-collection"></i> Khóa học của tôi</a></li>
                                     <li><hr class="dropdown-divider" /></li>
@@ -163,6 +170,9 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" asp-area="" asp-controller="Dictionary" asp-action="Index">Từ điển</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/News">Tin tức</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Privacy">Thông tin</a>
@@ -205,8 +215,7 @@
                                         </div>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="#"><i class="bi bi-person"></i> Hồ sơ</a></li>
-                                    <li><a class="dropdown-item" href="#"><i class="bi bi-gear"></i> Cài đặt</a></li>
+                                    <li><a class="dropdown-item" href="/Profile"><i class="bi bi-person"></i> Hồ sơ</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <form asp-controller="Auth" asp-action="Logout" method="post" class="d-inline">

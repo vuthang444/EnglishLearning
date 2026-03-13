@@ -1,7 +1,7 @@
 @model CommonLib.DTOs.DictionaryResultDto
 @{
     ViewData["Title"] = $"Từ điển - {Model.Word}";
-    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <style>
@@ -57,53 +57,6 @@
     .content-wrapper {
         max-width: 1200px;
         margin: 0 auto;
-        display: grid;
-        grid-template-columns: 300px 1fr;
-        gap: 30px;
-    }
-
-    .sidebar-ad {
-        background: linear-gradient(135deg, #2E5C8A 0%, #4A90E2 100%);
-        border-radius: 20px;
-        padding: 30px;
-        color: white;
-        text-align: center;
-        position: sticky;
-        top: 20px;
-        height: fit-content;
-    }
-
-    .ad-robot {
-        font-size: 4rem;
-        margin-bottom: 20px;
-    }
-
-    .ad-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin-bottom: 15px;
-    }
-
-    .ad-description {
-        font-size: 1rem;
-        margin-bottom: 25px;
-        opacity: 0.95;
-    }
-
-    .ad-btn {
-        background: white;
-        color: #2E5C8A;
-        border: none;
-        border-radius: 8px;
-        padding: 12px 30px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-
-    .ad-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
 
     .dictionary-entry {
@@ -306,13 +259,9 @@
         text-decoration: underline;
     }
 
-    @media (max-width: 968px) {
+    @@media (max-width: 968px) {
         .content-wrapper {
-            grid-template-columns: 1fr;
-        }
-        
-        .sidebar-ad {
-            position: relative;
+            padding: 0 10px;
         }
     }
 </style>
@@ -334,21 +283,10 @@
     </div>
 
     <div class="content-wrapper">
-        <!-- Sidebar Ad -->
-        <div class="sidebar-ad">
-            <div class="ad-robot">🤖</div>
-            <div class="ad-title">EnglishLearning Adaptive Testing</div>
-            <div class="ad-description">
-                Chỉ với 20 phút biết ngay trình độ tiếng Anh của bạn!
-            </div>
-            <a href="/Home/Dashboard" class="ad-btn">Thử ngay</a>
-        </div>
-
         <!-- Dictionary Entry -->
         <div class="dictionary-entry">
             <div class="tabs">
                 <button class="tab active">Definitions</button>
-                <button class="tab">Form and inflection</button>
             </div>
 
             <div class="word-header">

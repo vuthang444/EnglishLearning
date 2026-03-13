@@ -1,0 +1,325 @@
+@model CommonLib.Entities.News
+@{
+    ViewData["Title"] = Model?.Title ?? "Chi tiết tin tức";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    
+    var isPremium = ViewBag.IsPremium as bool? ?? false;
+}
+
+<style>
+    .news-detail-container {
+        padding: 30px;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .news-detail-header {
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    .news-detail-title {
+        color: #2E5C8A;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+    }
+
+    .news-detail-meta {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin-bottom: 15px;
+    }
+
+    .news-detail-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: #6c757d;
+    }
+
+    .news-content {
+        font-size: 1.1rem;
+        line-height: 1.8;
+        color: #212529;
+        margin-bottom: 40px;
+        white-space: pre-wrap;
+    }
+
+    .vocabulary-section {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+
+    .vocabulary-section h4 {
+        color: #2E5C8A;
+        margin-bottom: 20px;
+    }
+
+    .vocab-item {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        border-left: 4px solid #4A90E2;
+    }
+
+    .vocab-word {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #2E5C8A;
+        margin-bottom: 5px;
+    }
+
+    .vocab-meaning {
+        color: #495057;
+        margin-bottom: 8px;
+    }
+
+    .vocab-example {
+        color: #6c757d;
+        font-style: italic;
+        font-size: 0.95rem;
+    }
+
+    .premium-features {
+        background: linear-gradient(135deg, #2E5C8A 0%, #4A90E2 100%);
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 30px;
+        color: white;
+    }
+
+    .premium-features h4 {
+        color: white;
+        margin-bottom: 15px;
+    }
+
+    .premium-btn {
+        background: white;
+        color: #2E5C8A;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-weight: 600;
+        margin-right: 10px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .premium-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .ai-result-box {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 15px;
+        display: none;
+    }
+
+    .ai-result-box.show {
+        display: block;
+    }
+
+    .grammar-point {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+
+    .grammar-structure {
+        font-weight: 700;
+        color: #2E5C8A;
+        margin-bottom: 8px;
+    }
+
+    .upgrade-prompt {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 30px;
+    }
+</style>
+
+@Html.AntiForgeryToken()
+<div class="news-detail-container">
+    <div class="news-detail-header">
+        @if (!string.IsNullOrEmpty(Model.FeaturedImagePath))
+        {
+            <div class="news-detail-featured-image mb-4">
+                <img src="@Model.FeaturedImagePath" alt="@Model.Title" class="img-fluid rounded" style="width: 100%; max-height: 400px; object-fit: cover;" />
+            </div>
+        }
+        <h1 class="news-detail-title">@Model.Title</h1>
+        
+        <div class="news-detail-meta">
+            <span class="news-detail-meta-item">
+                <i class="bi bi-calendar"></i>
+                @(Model.PublishedAt?.ToString("dd/MM/yyyy HH:mm") ?? Model.CreatedAt.ToString("dd/MM/yyyy HH:mm"))
+            </span>
+            <span class="news-detail-meta-item">
+                <i class="bi bi-tag"></i>
+                @(Model.Topic ?? "General")
+            </span>
+            <span class="badge badge-level badge-@Model.Level.ToLower()">
+                @Model.Level
+            </span>
+            @if (Model.SourceUrl != null)
+            {
+                <span class="news-detail-meta-item">
+                    <i class="bi bi-link-45deg"></i>
+                    <a href="@Model.SourceUrl" target="_blank" class="text-decoration-none">Nguồn</a>
+                </span>
+            }
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.MetaDescription))
+        {
+            <p class="text-muted">@Model.MetaDescription</p>
+        }
+    </div>
+
+    @if (!isPremium)
+    {
+        <div class="upgrade-prompt">
+            <h5><i class="bi bi-star-fill text-warning"></i> Nâng cấp Premium để sử dụng:</h5>
+            <ul class="mb-0">
+                <li><strong>AI Summary:</strong> Tóm tắt bài tin tức trong 3 câu</li>
+                <li><strong>Grammar Explanation:</strong> Giải thích 2 cấu trúc ngữ pháp nâng cao</li>
+            </ul>
+            <a href="/Courses" class="btn btn-warning mt-3">Nâng cấp ngay</a>
+        </div>
+    }
+
+    @if (isPremium)
+    {
+        <div class="premium-features">
+            <h4><i class="bi bi-stars"></i> Tính năng Premium</h4>
+            <button class="premium-btn" onclick="getSummary(@Model.Id)">
+                <i class="bi bi-file-text"></i> AI Summary
+            </button>
+            <button class="premium-btn" onclick="getGrammarExplanation(@Model.Id)">
+                <i class="bi bi-book"></i> Explain Grammar
+            </button>
+            
+            <div id="summaryResult" class="ai-result-box">
+                <h5>Tóm tắt:</h5>
+                <p id="summaryText"></p>
+            </div>
+
+            <div id="grammarResult" class="ai-result-box">
+                <h5>Giải thích ngữ pháp:</h5>
+                <div id="grammarPoints"></div>
+            </div>
+        </div>
+    }
+
+    <div class="news-content">
+        @Html.Raw(Model.Content)
+    </div>
+
+    @if (Model.Vocabularies != null && Model.Vocabularies.Any())
+    {
+        <div class="vocabulary-section">
+            <h4><i class="bi bi-book-half"></i> Từ vựng trong bài</h4>
+            @foreach (var vocab in Model.Vocabularies.OrderBy(v => v.Order))
+            {
+                <div class="vocab-item">
+                    <div class="vocab-word">@vocab.Word</div>
+                    <div class="vocab-meaning"><strong>Nghĩa:</strong> @vocab.VietnameseMeaning</div>
+                    <div class="vocab-example"><strong>Ví dụ:</strong> @vocab.Example</div>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="text-center mt-4">
+        <a href="@Url.Content("~/News/Index")" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left"></i> Quay lại danh sách
+        </a>
+    </div>
+</div>
+
+<script>
+    async function getSummary(newsId) {
+        const resultDiv = document.getElementById('summaryResult');
+        const textDiv = document.getElementById('summaryText');
+        
+        resultDiv.classList.add('show');
+        textDiv.textContent = 'Đang tạo tóm tắt...';
+
+        try {
+            const response = await fetch('@Url.Action("GetSummary", "News")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ newsId: newsId })
+            });
+
+            const data = await response.json();
+            
+            if (data.error) {
+                textDiv.textContent = data.error;
+                textDiv.style.color = 'red';
+            } else {
+                textDiv.textContent = data.summary;
+                textDiv.style.color = '#212529';
+            }
+        } catch (error) {
+            textDiv.textContent = 'Có lỗi xảy ra. Vui lòng thử lại.';
+            textDiv.style.color = 'red';
+        }
+    }
+
+    async function getGrammarExplanation(newsId) {
+        const resultDiv = document.getElementById('grammarResult');
+        const pointsDiv = document.getElementById('grammarPoints');
+        
+        resultDiv.classList.add('show');
+        pointsDiv.innerHTML = '<p>Đang phân tích ngữ pháp...</p>';
+
+        try {
+            const response = await fetch('@Url.Action("GetGrammarExplanation", "News")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: JSON.stringify({ newsId: newsId })
+            });
+
+            const data = await response.json();
+            
+            if (data.error) {
+                pointsDiv.innerHTML = `<p style="color: red;">${data.error}</p>`;
+            } else if (data.grammarPoints && data.grammarPoints.length > 0) {
+                let html = '';
+                data.grammarPoints.forEach(point => {
+                    html += `
+                        <div class="grammar-point">
+                            <div class="grammar-structure">${point.structure}</div>
+                            <div style="margin-bottom: 10px;">${point.explanation}</div>
+                            <div style="color: #6c757d; font-style: italic;">Ví dụ: ${point.example}</div>
+                        </div>
+                    `;
+                });
+                pointsDiv.innerHTML = html;
+            } else {
+                pointsDiv.innerHTML = '<p>Không tìm thấy cấu trúc ngữ pháp nào.</p>';
+            }
+        } catch (error) {
+            pointsDiv.innerHTML = '<p style="color: red;">Có lỗi xảy ra. Vui lòng thử lại.</p>';
+        }
+    }
+</script>

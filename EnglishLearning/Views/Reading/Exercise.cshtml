@@ -1,11 +1,18 @@
 @model CommonLib.DTOs.ReadingExerciseDto
 
 @{
-    ViewData["Title"] = Model.Title;
+    ViewData["Title"] = "Reading - " + Model.Title;
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <div class="container-fluid py-4">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Trang chủ</a></li>
+            <li class="breadcrumb-item"><a href="@Url.Action("Index", "Reading")">Reading</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@Model.Title</li>
+        </ol>
+    </nav>
     <div class="row">
         <!-- Cột trái: Nội dung bài đọc -->
         <div class="col-lg-6 mb-4">
@@ -116,12 +123,15 @@
                             }
                         </div>
 
+                        <div id="readingSubmitStatus" class="mt-2" role="status" aria-live="polite" aria-atomic="true" style="display: none;">
+                            <div class="alert alert-info mb-0"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Đang xử lý, vui lòng đợi...</div>
+                        </div>
                         <div class="d-grid gap-2 mt-4">
-                            <button type="button" class="btn btn-primary btn-lg" id="submitBtn">
-                                <i class="bi bi-check-circle"></i> Nộp bài
+                            <button type="button" class="btn btn-primary btn-lg" id="submitBtn" aria-label="Nộp bài">
+                                <i class="bi bi-check-circle" aria-hidden="true"></i> Nộp bài
                             </button>
-                            <button type="button" class="btn btn-outline-secondary" id="resetBtn">
-                                <i class="bi bi-arrow-clockwise"></i> Làm lại
+                            <button type="button" class="btn btn-outline-secondary" id="resetBtn" aria-label="Làm lại từ đầu">
+                                <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Làm lại
                             </button>
                         </div>
                     </form>
@@ -229,8 +239,10 @@
     // Hàm submit bài làm
     async function submitAnswers() {
         const submitBtn = document.getElementById('submitBtn');
+        const submitStatus = document.getElementById('readingSubmitStatus');
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang xử lý...';
+        if (submitStatus) submitStatus.style.display = 'block';
 
         // Tính thời gian làm bài
         const timeSpent = Math.floor((new Date() - startTime) / 1000);
@@ -261,81 +273,33 @@
             const result = await response.json();
 
             if (result.success) {
-                // Hiển thị kết quả
-                displayResult(result.result);
+                if (submitStatus) submitStatus.style.display = 'none';
+
+                // Sau khi nộp bài thành công, chuyển sang trang kết quả đầy đủ (giống các kỹ năng khác)
+                const submissionId = result.result?.submissionId || result.result?.SubmissionId;
+                if (submissionId) {
+                    const resultUrl = '@Url.Content("~/Reading/Result")/' + submissionId;
+                    window.location.href = resultUrl;
+                    return;
+                } else {
+                    alert('Không lấy được mã kết quả bài làm. Vui lòng thử lại.');
+                }
+
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Nộp bài';
             } else {
+                if (submitStatus) submitStatus.style.display = 'none';
                 alert('Lỗi: ' + (result.message || 'Không thể lưu kết quả'));
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Nộp bài';
             }
         } catch (error) {
             console.error('Error:', error);
+            if (submitStatus) submitStatus.style.display = 'none';
             alert('Đã xảy ra lỗi khi nộp bài. Vui lòng thử lại.');
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Nộp bài';
         }
-    }
-
-    // Hiển thị kết quả
-    function displayResult(result) {
-        const resultContent = document.getElementById('resultContent');
-        
-        let html = `
-            <div class="text-center mb-4">
-                <h3 class="mb-3">Kết quả bài làm</h3>
-                <div class="display-4 fw-bold ${result.percentage >= 80 ? 'text-success' : result.percentage >= 50 ? 'text-warning' : 'text-danger'}">
-                    ${result.score}/${result.maxScore}
-                </div>
-                <div class="h5 text-muted">${result.percentage}%</div>
-                <p class="text-muted">Thời gian làm bài: ${formatTime(result.timeSpentSeconds)}</p>
-            </div>
-            
-            <hr>
-            
-            <h5 class="mb-3">Chi tiết từng câu hỏi:</h5>
-            <div class="list-group">
-        `;
-
-        result.questionResults.forEach((qResult, index) => {
-            const isCorrect = qResult.isCorrect;
-            const badgeClass = isCorrect ? 'bg-success' : 'bg-danger';
-            const icon = isCorrect ? 'bi-check-circle-fill' : 'bi-x-circle-fill';
-            
-            html += `
-                <div class="list-group-item ${isCorrect ? 'list-group-item-success' : 'list-group-item-danger'}">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="flex-grow-1">
-                            <h6 class="mb-2">
-                                <span class="badge ${badgeClass} me-2">
-                                    <i class="bi ${icon}"></i> ${isCorrect ? 'Đúng' : 'Sai'}
-                                </span>
-                                Câu ${index + 1}: ${qResult.question}
-                            </h6>
-                            <div class="ms-4">
-                                <small class="text-muted">Đáp án bạn chọn: <strong>${qResult.selectedAnswer || 'Chưa chọn'}</strong></small><br>
-                                <small class="text-muted">Đáp án đúng: <strong class="text-success">${qResult.correctAnswer}</strong></small>
-                            </div>
-                        </div>
-                        <span class="badge bg-secondary">${qResult.score}/${qResult.score} điểm</span>
-                    </div>
-                </div>
-            `;
-        });
-
-        html += `
-            </div>
-            <div class="mt-3 text-center">
-                <a href="@Url.Action("Result", "Reading")/${result.submissionId}" class="btn btn-primary">
-                    Xem chi tiết kết quả
-                </a>
-            </div>
-        `;
-
-        resultContent.innerHTML = html;
-        
-        // Hiển thị modal
-        const modal = new bootstrap.Modal(document.getElementById('resultModal'));
-        modal.show();
     }
 
     // Format thời gian

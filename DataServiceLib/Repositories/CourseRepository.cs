@@ -49,6 +49,14 @@ namespace DataServiceLib.Repositories
         {
             var c = await _context.Courses.FindAsync(id);
             if (c == null) return false;
+
+            // Kiểm tra xem có Order nào đang sử dụng Course này không
+            var hasOrders = await _context.Orders.AnyAsync(o => o.CourseId == id);
+            if (hasOrders)
+            {
+                throw new InvalidOperationException("Không thể xóa khóa học vì đã có đơn hàng liên quan. Vui lòng vô hiệu hóa khóa học thay vì xóa.");
+            }
+
             _context.Courses.Remove(c);
             await _context.SaveChangesAsync();
             return true;

@@ -387,17 +387,27 @@ namespace EnglishLearning.Controllers.Admin
                 var lesson = await _lessonRepository.GetByIdAsync(id);
                 if (lesson == null)
                 {
-                    return Json(new { success = false, message = "Không tìm thấy bài tập" });
+                    TempData["ErrorMessage"] = "Không tìm thấy bài viết để xóa.";
+                    return RedirectToAction("Index");
                 }
 
-                await _lessonRepository.DeleteAsync(id);
-                return Json(new { success = true, message = "Xóa bài viết thành công!" });
+                var result = await _lessonRepository.DeleteAsync(id);
+                if (result)
+                {
+                    TempData["SuccessMessage"] = "Xóa bài viết thành công!";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Không thể xóa bài viết.";
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi khi xóa bài viết");
-                return Json(new { success = false, message = "Đã xảy ra lỗi khi xóa bài viết" });
+                TempData["ErrorMessage"] = "Đã xảy ra lỗi khi xóa bài viết.";
             }
+
+            return RedirectToAction("Index");
         }
 
         // Helper method

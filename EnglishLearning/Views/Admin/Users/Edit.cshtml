@@ -1,0 +1,50 @@
+@model CommonLib.Entities.User
+@{
+    ViewData["Title"] = "Sửa người dùng";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var roles = ViewBag.Roles as List<CommonLib.Entities.Role> ?? new List<CommonLib.Entities.Role>();
+}
+
+<div class="admin-dashboard">
+    <h2 class="mb-2">Sửa người dùng</h2>
+    <p class="text-muted mb-4">Cập nhật vai trò tài khoản</p>
+
+    <form method="post" action="/Admin/Users/Edit/@Model.Id">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.Id" />
+
+        <div class="mb-3">
+            <label class="form-label">Tên đăng nhập</label>
+            <input type="text" class="form-control" value="@Model.Username" disabled />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" value="@Model.Email" disabled />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Vai trò</label>
+            <select name="RoleId" class="form-select">
+                @foreach (var r in roles)
+                {
+                    if (r.Id == Model.RoleId)
+                    {
+                        <option value="@r.Id" selected>@r.Name</option>
+                    }
+                    else
+                    {
+                        <option value="@r.Id">@r.Name</option>
+                    }
+                }
+            </select>
+            <div class="form-text">Chọn Admin hoặc User cho tài khoản này.</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg"></i> Lưu thay đổi
+        </button>
+        <a href="/Admin/Users" class="btn btn-secondary ms-2">Quay lại</a>
+    </form>
+</div>
+

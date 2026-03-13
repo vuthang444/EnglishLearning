@@ -2,24 +2,117 @@
 @{
     ViewData["Title"] = "Khóa học của tôi";
 }
-<div class="container py-4">
-    <h2 class="mb-3"><i class="bi bi-collection"></i> Khóa học của tôi</h2>
+<style>
+    .mycourses-hero {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #38bdf8 100%);
+        color: #fff;
+        padding: 30px 0 22px;
+    }
+
+    .mycourses-card {
+        border-radius: 18px;
+        border: 1px solid rgba(148,163,184,0.35);
+        box-shadow: 0 10px 24px rgba(15,23,42,0.12);
+        background: #fff;
+        overflow: hidden;
+        height: 100%;
+    }
+
+    .mycourses-title {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 4px;
+    }
+
+    .mycourses-meta {
+        font-size: 0.9rem;
+        color: #64748b;
+        margin-bottom: 8px;
+    }
+</style>
+
+<section class="mycourses-hero">
+    <div class="container">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div>
+                <div class="text-uppercase small mb-1" style="opacity:0.9;">Lộ trình học</div>
+                <h1 class="h4 fw-bold mb-1"><i class="bi bi-collection"></i> Khóa học của tôi</h1>
+                <div style="opacity:0.9;">
+                    Xem các khóa học bạn đã mua và tiếp tục học bất cứ lúc nào.
+                </div>
+            </div>
+            <div>
+                <a href="/Courses" class="btn btn-light btn-sm">
+                    <i class="bi bi-shop"></i> Xem thêm khóa học
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container my-4">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
     @if (Model == null || !Model.Any())
     {
-        <p class="text-muted">Bạn chưa mua khóa học nào.</p>
-        <a href="/Courses" class="btn btn-primary">Xem khóa học</a>
+        <div class="text-center py-5">
+            <p class="text-muted mb-3">Bạn chưa mua khóa học nào.</p>
+            <a href="/Courses" class="btn btn-primary">
+                <i class="bi bi-shop"></i> Xem khóa học
+            </a>
+        </div>
     }
     else
     {
-        <ul class="list-group">
+        <div class="row g-3 g-lg-4">
             @foreach (var o in Model)
             {
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span>@(o.Course?.Title ?? "N/A")</span>
-                    <span class="badge bg-success">Đã thanh toán</span>
-                </li>
+                var c = o.Course;
+                <div class="col-12 col-md-6">
+                    <div class="mycourses-card p-3">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <div>
+                                <div class="mycourses-title">@c?.Title</div>
+                                <div class="mycourses-meta">
+                                    @if (!string.IsNullOrWhiteSpace(c?.Topic))
+                                    {
+                                        @c.Topic
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(c?.Level))
+                                    {
+                                        @: · @c.Level
+                                    }
+                                </div>
+                            </div>
+                            <span class="badge bg-success">Đã thanh toán</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center small text-muted mb-2">
+                            <span>Mã đơn: @(string.IsNullOrEmpty(o.MomoOrderId) ? ("#" + o.Id) : o.MomoOrderId)</span>
+                            <span>@o.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                        </div>
+                        <div class="d-flex justify-content-start align-items-center">
+                            <div class="fw-semibold text-primary">
+                                @o.Amount.ToString("N0") đ
+                            </div>
+                        </div>
+                    </div>
+                </div>
             }
-        </ul>
+        </div>
     }
 </div>
 

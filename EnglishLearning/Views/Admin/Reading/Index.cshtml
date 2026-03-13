@@ -13,11 +13,8 @@
             <p class="text-muted mb-0">Kỹ năng đọc - Quản lý bài học và bài tập</p>
         </div>
         <div>
-            <a href="@Url.Action("CreateReadingPassage")" class="btn btn-primary me-2">
+            <a href="@Url.Action("CreateReadingPassage")" class="btn btn-primary">
                 <i class="bi bi-file-text"></i> Tạo bài đọc mới
-            </a>
-            <a href="@Url.Action("CreateLesson")" class="btn btn-outline-primary">
-                <i class="bi bi-plus-circle"></i> Thêm bài học đơn giản
             </a>
         </div>
     </div>
@@ -118,14 +115,14 @@
                                             <a href="@Url.Action("LessonDetail", new { id = lesson.Id })" class="btn btn-sm btn-info" title="Xem chi tiết">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            <a href="@Url.Action("Exercises", new { lessonId = lesson.Id })" class="btn btn-sm btn-primary" title="Quản lý bài tập">
-                                                <i class="bi bi-list-check"></i>
-                                            </a>
-                                            <a href="@Url.Action("EditLesson", new { id = lesson.Id })" class="btn btn-sm btn-warning" title="Sửa">
+                                            <a href="@Url.Action("EditLesson", new { id = lesson.Id })" class="btn btn-sm btn-warning" title="Sửa bài đọc & câu hỏi">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
-                                            <form asp-action="DeleteLesson" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa bài học này? Tất cả bài tập liên quan cũng sẽ bị xóa.');">
-                                                <input type="hidden" name="id" value="@lesson.Id" />
+                                            <form asp-action="DeleteLesson"
+                                                  asp-route-id="@lesson.Id"
+                                                  method="post"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('Bạn có chắc chắn muốn xóa bài học này? Tất cả bài tập liên quan cũng sẽ bị xóa.');">
                                                 <button type="submit" class="btn btn-sm btn-danger" title="Xóa">
                                                     <i class="bi bi-trash"></i>
                                                 </button>

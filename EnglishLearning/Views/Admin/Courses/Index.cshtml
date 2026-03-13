@@ -3,7 +3,7 @@
     ViewData["Title"] = "Quản lý khóa học";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
-<div class="main-content">
+<div>
     <h2 class="mb-3">Quản lý khóa học</h2>
     <p class="text-muted">AI hỗ trợ thiết kế khóa học (Course Creator)</p>
     @if (TempData["SuccessMessage"] != null)
@@ -24,18 +24,50 @@
     else
     {
         <div class="table-responsive">
-            <table class="table table-bordered">
-                <thead><tr><th>ID</th><th>Tiêu đề</th><th>Chủ đề</th><th>Cấp độ</th><th>Giá (USD)</th><th>Trạng thái</th></tr></thead>
+            <table class="table table-bordered table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tiêu đề</th>
+                        <th>Chủ đề</th>
+                        <th>Cấp độ</th>
+                        <th>Giá (VND)</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
                 <tbody>
                     @foreach (var c in Model)
                     {
                         <tr>
                             <td>@c.Id</td>
-                            <td>@c.Title</td>
+                            <td><strong>@c.Title</strong></td>
                             <td>@c.Topic</td>
-                            <td>@c.Level</td>
-                            <td>@c.PriceUSD.ToString("N2")</td>
-                            <td>@(c.IsActive ? "Hoạt động" : "Tắt")</td>
+                            <td><span class="badge bg-info">@c.Level</span></td>
+                            <td>@c.PriceUSD.ToString("N0")</td>
+                            <td>
+                                @if (c.IsActive)
+                                {
+                                    <span class="badge bg-success">Hoạt động</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Tắt</span>
+                                }
+                            </td>
+                            <td>@c.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                <a href="/Admin/Courses/Edit/@c.Id" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-pencil"></i> Sửa
+                                </a>
+                                <form method="post" action="/Admin/Courses/Delete/@c.Id" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa khóa học này? Hành động này không thể hoàn tác.');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="bi bi-trash"></i> Xóa
+                                    </button>
+                                </form>
+                            </td>
                         </tr>
                     }
                 </tbody>

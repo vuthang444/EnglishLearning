@@ -10,6 +10,10 @@ namespace CommonLib.Interfaces
         Task<User> CreateAsync(User user);
         Task<User?> GetByIdAsync(int id);
         Task<bool> UserExistsAsync(string username, string email);
+        Task<List<User>> GetAllAsync();
+        Task<User> UpdateAsync(User user);
+        Task<int> CountAsync();
+        Task<bool> DeleteAsync(int id);
     }
 }
 

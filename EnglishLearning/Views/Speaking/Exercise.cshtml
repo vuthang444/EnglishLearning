@@ -1,11 +1,18 @@
 @model CommonLib.DTOs.SpeakingExerciseDto
 
 @{
-    ViewData["Title"] = Model.Title;
+    ViewData["Title"] = "Speaking - " + Model.Title;
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <div class="container my-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Trang chủ</a></li>
+            <li class="breadcrumb-item"><a href="@Url.Action("Index", "Speaking")">Speaking</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@Model.Title</li>
+        </ol>
+    </nav>
     <div class="row">
         <div class="col-12">
             <div class="card shadow">
@@ -54,36 +61,36 @@
                             <div class="row align-items-center">
                                 <div class="col-md-8">
                                     <div class="mb-3">
-                                        <div class="d-flex align-items-center mb-2">
-                                            <button id="btnRecord" class="btn btn-danger btn-lg me-3">
-                                                <i class="bi bi-record-circle"></i> <span id="recordText">Bắt đầu ghi âm</span>
+                                        <div class="d-flex align-items-center mb-2 flex-wrap gap-2">
+                                            <button id="btnRecord" class="btn btn-danger btn-lg me-3" type="button" aria-label="Bắt đầu ghi âm">
+                                                <i class="bi bi-record-circle" aria-hidden="true"></i> <span id="recordText">Bắt đầu ghi âm</span>
                                             </button>
-                                            <button id="btnStop" class="btn btn-secondary btn-lg me-3" disabled>
-                                                <i class="bi bi-stop-circle"></i> Dừng
+                                            <button id="btnStop" class="btn btn-secondary btn-lg me-3" type="button" disabled aria-label="Dừng ghi âm">
+                                                <i class="bi bi-stop-circle" aria-hidden="true"></i> Dừng
                                             </button>
-                                            <button id="btnPlay" class="btn btn-info btn-lg" disabled>
-                                                <i class="bi bi-play-circle"></i> Nghe lại
+                                            <button id="btnPlay" class="btn btn-info btn-lg" type="button" disabled aria-label="Nghe lại bản ghi">
+                                                <i class="bi bi-play-circle" aria-hidden="true"></i> Nghe lại
                                             </button>
                                         </div>
-                                        <div class="mb-2">
+                                        <div class="mb-2 practice-timer">
                                             <small class="text-muted">
-                                                <span id="timer">00:00</span> / <span id="timeLimit">@(Model.TimeLimitSeconds / 60):@(Model.TimeLimitSeconds % 60).ToString("00")</span>
+                                                <span id="timer" aria-live="polite">00:00</span> / <span id="timeLimit">@(Model.TimeLimitSeconds / 60):@(Model.TimeLimitSeconds % 60).ToString("00")</span>
                                             </small>
                                         </div>
-                                        <div class="progress mb-2" style="height: 25px;">
+                                        <div class="progress mb-2" style="height: 25px;" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Tiến trình thời gian ghi âm">
                                             <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
-                                                 role="progressbar" style="width: 0%"></div>
+                                                 style="width: 0%"></div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-4 text-end">
-                                    <button id="btnSubmit" class="btn btn-success btn-lg" disabled>
-                                        <i class="bi bi-check-circle"></i> Nộp bài
+                                    <button id="btnSubmit" class="btn btn-success btn-lg" type="button" disabled aria-label="Nộp bài">
+                                        <i class="bi bi-check-circle" aria-hidden="true"></i> Nộp bài
                                     </button>
                                 </div>
                             </div>
-                            <div id="recordingStatus" class="alert alert-warning mt-3" style="display: none;">
-                                <i class="bi bi-hourglass-split"></i> <span id="statusText">Đang xử lý...</span>
+                            <div id="recordingStatus" class="alert alert-warning mt-3" style="display: none;" role="status" aria-live="polite" aria-atomic="true">
+                                <i class="bi bi-hourglass-split" aria-hidden="true"></i> <span id="statusText">Đang xử lý...</span>
                             </div>
                         </div>
                     </div>

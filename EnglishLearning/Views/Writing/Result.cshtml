@@ -373,12 +373,18 @@
                     }
 
                     <!-- Actions -->
-                    <div class="d-flex gap-2">
-                        <a href="@Url.Action("Exercise", new { lessonId = lesson?.Id })" class="btn btn-primary">
-                            <i class="bi bi-arrow-repeat"></i> Làm lại
+                    <div class="d-flex flex-wrap gap-2">
+                        @if (lesson != null)
+                        {
+                            <a href="@Url.Action("Exercise", "Writing", new { lessonId = lesson.Id })" class="btn btn-primary">
+                                <i class="bi bi-arrow-repeat"></i> Làm lại
+                            </a>
+                        }
+                        <a href="@Url.Content("~/Writing/Index")" class="btn btn-outline-primary">
+                            <i class="bi bi-list"></i> Về danh sách Writing
                         </a>
-                        <a href="@Url.Action("Index")" class="btn btn-secondary">
-                            <i class="bi bi-list"></i> Danh sách bài tập
+                        <a href="@Url.Action("Dashboard", "Home")" class="btn btn-outline-secondary">
+                            <i class="bi bi-house-door"></i> Về Dashboard
                         </a>
                     </div>
 

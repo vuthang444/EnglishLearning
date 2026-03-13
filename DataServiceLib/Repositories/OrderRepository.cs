@@ -25,13 +25,16 @@ namespace DataServiceLib.Repositories
 
         public async Task<bool> HasActivePremiumAsync(int userId)
         {
-            // Kiểm tra user có đơn hàng đã thanh toán trong vòng 30 ngày gần đây
-            var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
+            // Kiểm tra user có đơn hàng đã thanh toán trong vòng 1 năm gần đây
+            var oneYearAgo = DateTime.UtcNow.AddDays(-365);
             return await _context.Orders
                 .AnyAsync(o => o.UserId == userId 
                     && o.Status == "Paid" 
-                    && o.CreatedAt >= thirtyDaysAgo);
+                    && o.CreatedAt >= oneYearAgo);
         }
+
+        public async Task<List<Order>> GetAllAsync() =>
+            await _context.Orders.Include(o => o.Course).ToListAsync();
 
         public async Task<Order> CreateAsync(Order order)
         {

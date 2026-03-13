@@ -2,7 +2,7 @@
     ViewData["Title"] = "AI Thiết kế khóa học";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
-<div class="main-content">
+<div>
     <h2 class="mb-3">AI Thiết kế khóa học (Course Creator)</h2>
     <p class="text-muted">Nhập chủ đề và trình độ, AI sẽ đề xuất lộ trình, giá và nội dung quảng cáo.</p>
     @if (TempData["ErrorMessage"] != null)
@@ -36,10 +36,6 @@
             <input type="text" class="form-control" name="Title" id="Title" required placeholder="Sẽ được điền bởi AI hoặc nhập tay" />
         </div>
         <div class="mb-3">
-            <label class="form-label">Syllabus (JSON: modules, lessons)</label>
-            <textarea class="form-control font-monospace" name="Syllabus" id="Syllabus" rows="4" placeholder="Sẽ được điền bởi AI"></textarea>
-        </div>
-        <div class="mb-3">
             <label class="form-label">Target Audience</label>
             <textarea class="form-control" name="TargetAudience" id="TargetAudience" rows="2" placeholder="Sẽ được điền bởi AI"></textarea>
         </div>
@@ -48,8 +44,8 @@
             <textarea class="form-control" name="MarketingCopy" id="MarketingCopy" rows="5" placeholder="Sẽ được điền bởi AI"></textarea>
         </div>
         <div class="mb-3">
-            <label class="form-label">Giá (USD)</label>
-            <input type="number" class="form-control" name="PriceUSD" id="PriceUSD" step="0.01" min="0" value="0" />
+            <label class="form-label">Giá (VND)</label>
+            <input type="number" class="form-control" name="PriceUSD" id="PriceUSD" step="1000" min="0" value="0" />
         </div>
         <div>
             <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Lưu khóa học</button>
@@ -74,10 +70,9 @@ document.getElementById('btnAi').addEventListener('click', async function(){
         if (json.success && json.data) {
             var d = json.data;
             document.getElementById('Title').value = d.courseTitle || '';
-            document.getElementById('Syllabus').value = typeof d.syllabus === 'string' ? d.syllabus : JSON.stringify(d.syllabus || {}, null, 2);
             document.getElementById('TargetAudience').value = d.targetAudience || '';
             document.getElementById('MarketingCopy').value = d.marketingCopy || '';
-            document.getElementById('PriceUSD').value = d.pricingSuggestion != null ? d.pricingSuggestion : 0;
+            // Giá sẽ do admin nhập thủ công bằng VND
         } else {
             alert(json.message || 'Không thể tạo thiết kế.');
         }
